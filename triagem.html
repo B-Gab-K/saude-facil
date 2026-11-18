@@ -33,6 +33,7 @@
       <div class="notice danger" role="note"><strong>Emergência? Não use este formulário para decidir.</strong><p>Se houver falta de ar importante, dor forte e súbita no peito, sinais de AVC, convulsão ou outra emergência, ligue <strong>192 (SAMU)</strong> ou procure atendimento de emergência imediatamente.</p></div>
       <form id="formTriagem" class="form-stack" novalidate>
         <div class="field"><label for="sintomas">Queixa fictícia</label><textarea id="sintomas" maxlength="800" placeholder="Ex.: personagem fictício com febre e dor de garganta há dois dias" aria-describedby="ajuda-sintomas"></textarea><p class="help" id="ajuda-sintomas">A análise não identifica doenças nem exclui situações graves.</p></div>
+        <div><button type="button" class="btn btn-subtle" id="ditar">🎙️ Ditar sintomas</button><p class="help" id="ditado-status" role="status" aria-live="polite">O reconhecimento de voz depende do navegador e pode usar um serviço externo. Revise o texto antes de continuar.</p></div>
         <p class="error" id="erro" role="alert"></p>
         <button class="btn btn-primary" id="analisarQueixa" type="submit">Analisar queixa fictícia</button>
       </form>
@@ -85,6 +86,7 @@
     </div>
   </div>
   <script src="assets/app.js"></script>
+  <script src="assets/ditado.js"></script>
   <script>
   (() => {
     'use strict';
