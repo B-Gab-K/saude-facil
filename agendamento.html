@@ -54,7 +54,8 @@
   </main>
   <footer class="container"><p class="footer-note">Protótipo acadêmico • Dados fictícios • As unidades e seus serviços exigem confirmação local</p></footer>
   <script src="assets/app.js"></script>
-  <script>
+  <script type="module">
+  await SaudeFacil.ready;
   (() => {
     'use strict';
     const $ = id => document.getElementById(id);
@@ -138,7 +139,7 @@
     }
     mostrarServicos();mostrarLocal();
     if (anterior) { const r=[...document.querySelectorAll('input[name="servico"]')].find(x=>x.value===anterior.servico); if(r)r.checked=true; }
-    $('form').addEventListener('submit', e => {
+    $('form').addEventListener('submit', async e => {
       e.preventDefault();
       const servico = document.querySelector('input[name="servico"]:checked')?.value;
       const ubs=seletor.value, data=$('data').value;
@@ -155,11 +156,11 @@
         triagemResumo:SaudeFacil.read('triagem',{}).texto || 'Não informada',
         observacao:'',atualizadoEm:new Date().toISOString()
       };
-      const atual = SaudeFacil.appointments();
-      const i = atual.findIndex(a=>a.id===nova.id);
-      if (i>=0) atual[i]=nova; else atual.unshift(nova);
-      if (!SaudeFacil.write('consultas', atual.slice(0,40))) {
-        $('erro').textContent='Não foi possível salvar no navegador. Verifique as permissões de armazenamento.'; return;
+      $('confirmar').disabled=true;
+      const saved = anterior ? await SaudeFacil.updateAppointment(nova.id, nova) : await SaudeFacil.saveAppointment(nova);
+      $('confirmar').disabled=false;
+      if (!saved) {
+        $('erro').textContent='Não foi possível salvar. Verifique se a API e o banco estão disponíveis.'; return;
       }
       location.href='confirmacao.html?id='+encodeURIComponent(nova.id);
     });

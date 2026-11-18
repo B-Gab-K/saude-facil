@@ -23,7 +23,8 @@
 <div class="notice warning"><strong>Importante: não é uma consulta marcada.</strong><p>O sistema não consulta agendas do SUS. A data é somente uma preferência e o horário não foi reservado.</p></div>
 <div id="resumo" aria-live="polite"></div><div class="actions space-top"><a class="btn btn-primary" href="historico.html">Ver meu histórico</a><a class="btn btn-subtle" href="agendamento.html">Nova solicitação fictícia</a></div>
 </section></main><footer class="container"><p class="footer-note">MVP acadêmico • Sem envio de dados a uma UBS</p></footer>
-<script src="assets/app.js"></script><script>
+<script src="assets/app.js"></script><script type="module">
+await SaudeFacil.ready;
 (()=>{const params=new URLSearchParams(location.search);const id=params.get('id');const item=SaudeFacil.ownAppointments().find(x=>x.id===id);const root=document.getElementById('resumo');if(!item){root.append(SaudeFacil.make('p','Nenhuma solicitação identificada para exibir. Confira seu histórico.','notice'));return;}
 const dl=SaudeFacil.make('dl',null,'detail-list');[['Código de demonstração',item.codigo],['UBS',item.ubs],['Serviço',item.servico],['Data de preferência',SaudeFacil.formatDate(item.data)],['Horário','A confirmar'],['Situação',SaudeFacil.status(item.status).label]].forEach(([label,value])=>{const d=SaudeFacil.make('div',null,'detail-pair');d.append(SaudeFacil.make('dt',label),SaudeFacil.make('dd',value));dl.append(d);});root.append(dl);})();
 </script><script defer src="assets/nav.js"></script>

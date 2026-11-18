@@ -1,6 +1,7 @@
 /* Fluxo demonstrativo do profissional; não concede privilégios ou login reais. */
-(() => {
+(async () => {
  'use strict';
+ await SaudeFacil.ready;
  const $=id=>document.getElementById(id), sf=SaudeFacil;
  const current=location.pathname.split('/').pop();
  const normalize=s=>String(s||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -29,7 +30,8 @@
    }
    $('busca').addEventListener('input',render);$('filtro').addEventListener('change',render);
    $('limpar').addEventListener('click',()=>{$('busca').value='';$('filtro').value='';render();$('busca').focus();});
-   $('exemplos').addEventListener('click',()=>{const ok=sf.seedDemo();$('msg').textContent=ok?'Três exemplos foram adicionados.':'Os exemplos já foram carregados ou o navegador não permitiu salvar.';render();});
+   $('exemplos').addEventListener('click',async()=>{const ok=await sf.seedDemo();$('msg').textContent=ok?'Três exemplos foram adicionados.':'Os exemplos já foram carregados ou não foi possível acessar a API.';render();});
+   if(!sf.online()) $('msg').textContent='Não foi possível acessar a API. Verifique o servidor e o banco de dados.';
    render();
  }
  if(current==='atendimento-profissional.html'){
@@ -51,12 +53,12 @@
      $('secaoAcao').hidden=terminal;
      if(terminal)detalhe.append(sf.make('p','Este registro está encerrado nesta simulação e não pode ser alterado pela equipe.','notice'));
    }
-   $('formStatus').addEventListener('submit',e=>{
+   $('formStatus').addEventListener('submit',async e=>{
      e.preventDefault(); const value=$('situacao').value, observacao=$('observacao').value.trim();
      if(!['EM ANÁLISE','REAGENDAMENTO SOLICITADO','ATENDIMENTO FINALIZADO'].includes(value)){$('erro').textContent='Selecione a nova situação antes de salvar.';$('situacao').focus();return;}
      if(item?.status==='CANCELADO'||item?.status==='ATENDIMENTO FINALIZADO'){$('erro').textContent='Este registro já foi encerrado.';return;}
      if(value==='ATENDIMENTO FINALIZADO' && !confirm('Confirmar a finalização fictícia deste registro?'))return;
-     if(!sf.updateAppointment(id,{status:value,observacao})){$('erro').textContent='Não foi possível gravar no armazenamento deste navegador.';return;}
+     if(!await sf.updateAppointment(id,{status:value,observacao})){$('erro').textContent='Não foi possível salvar na API.';return;}
      item=sf.appointments().find(a=>a.id===id);renderDetail();$('secaoAcao').hidden=false;$('formStatus').hidden=true;$('salvo').hidden=false;
      $('salvoTexto').textContent='Nova situação: '+sf.status(value).label+'. Confira a mudança no painel ou no histórico do paciente.';
      $('salvo').scrollIntoView({block:'nearest'});$('salvo').focus?.();
