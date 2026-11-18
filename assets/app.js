@@ -70,7 +70,11 @@
       {paciente:{nome:'Maria Exemplo',cpf:'111.111.111-11',nasc:'1985-07-16'},servico:'Enfermagem',ubs:'UBS Cavalhada (Dr. Ademar R. de Oliveira)',data:daysFromToday(3),status:'EM ANÁLISE',triagemResumo:'Solicitação de acompanhamento (simulação)'},
       {paciente:{nome:'Ana Demonstração',cpf:'222.222.222-22',nasc:'2002-02-02'},servico:'Vacinação',ubs:'UBS São Miguel',data:daysFromToday(4),status:'REAGENDAMENTO SOLICITADO',triagemResumo:'Informações de vacinação (simulação)'}
     ];
-    for (const a of template) if (!await saveAppointment({...a,id:id(),codigo:code()})) return false;
+    for (const a of template) {
+      const appointmentId=id();
+      if (!await saveAppointment({...a,id:appointmentId,codigo:code()})) return false;
+      if (a.status !== 'SOLICITAÇÃO RECEBIDA' && !await updateAppointment(appointmentId,{status:a.status})) return false;
+    }
     return true;
   }
   function initials(nome) {return String(nome||'P').split(/\s+/).slice(0,2).map(x=>x.charAt(0).toUpperCase()).join('');}

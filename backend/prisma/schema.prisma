@@ -20,4 +20,7 @@ model Appointment {
   observacao    String
   atualizadoEm  DateTime @updatedAt
   criadoEm      DateTime @default(now())
+
+  @@index([criadoEm])
+  @@index([status])
 }
