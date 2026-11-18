@@ -44,7 +44,7 @@
         <div id="localInfo" class="map-placeholder" aria-live="polite">Escolha uma UBS para consultar sua localização.</div>
         <div id="mapBox" hidden>
           <div class="notice" id="mapAddress" aria-live="polite"></div>
-          <p class="small">O mapa é carregado somente ao clicar em “Carregar mapa” e utiliza um serviço externo (Google Maps).</p>
+          <p class="small">A busca usa o OpenStreetMap e é carregada somente ao clicar no botão. Confira o endereço antes de sair.</p>
           <div class="map-placeholder" id="mapWait">Mapa não carregado. Clique no botão para visualizar.</div>
           <iframe class="map-frame" id="mapFrame" title="Mapa da UBS selecionada" loading="lazy" referrerpolicy="no-referrer-when-downgrade" hidden></iframe>
           <div class="map-actions"><button type="button" class="btn btn-subtle" id="carregarMapa">🗺️ Carregar mapa</button><a href="#" class="btn btn-primary" id="abrirRotas" target="_blank" rel="noopener noreferrer">Abrir direções</a></div>
@@ -94,7 +94,7 @@
     }
     function mostrarLocal() {
       const info = $('localInfo'), box=$('mapBox'), u=UBS[seletor.value];
-      $('mapFrame').removeAttribute('src'); $('mapFrame').hidden=true; $('mapWait').hidden=false;
+      $('mapFrame').removeAttribute('src'); $('mapFrame').hidden=true; $('mapWait').hidden=false; $('mapWait').textContent='Mapa não carregado. Clique no botão para visualizar.';
       chaveEndereco = ''; box.hidden=true;
       if (!u) { info.hidden=false;info.textContent='Escolha uma UBS para consultar sua localização.';return; }
       if (!u.confirmado) {
@@ -111,12 +111,24 @@
       const p=document.createElement('p');p.textContent=u.endereco;
       $('mapAddress').append(strong,p);
       chaveEndereco = u.endereco;
-      $('abrirRotas').href='https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(chaveEndereco);
+      $('abrirRotas').href='https://www.openstreetmap.org/search?query='+encodeURIComponent(chaveEndereco);
+      $('abrirRotas').textContent='Buscar no OpenStreetMap';
     }
-    $('carregarMapa').addEventListener('click', () => {
+    $('carregarMapa').addEventListener('click', async () => {
       if (!chaveEndereco) return;
-      $('mapFrame').src='https://maps.google.com/maps?q='+encodeURIComponent(chaveEndereco)+'&output=embed';
-      $('mapFrame').hidden=false;$('mapWait').hidden=true;
+      const endereco = chaveEndereco;
+      $('mapWait').textContent='Buscando localização…';
+      try {
+        const response=await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&q='+encodeURIComponent(endereco));
+        if (!response.ok) throw new Error('Falha na busca');
+        const resultados=await response.json();
+        if (endereco !== chaveEndereco) return;
+        if (!resultados.length) throw new Error('Endereço não encontrado');
+        const lat=Number(resultados[0].lat), lon=Number(resultados[0].lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) throw new Error('Localização inválida');
+        $('mapFrame').src='https://www.openstreetmap.org/export/embed.html?bbox='+encodeURIComponent([lon-.008,lat-.006,lon+.008,lat+.006].join(','))+'&marker='+encodeURIComponent(lat+','+lon);
+        $('mapFrame').hidden=false;$('mapWait').hidden=true;
+      } catch (_) { if (endereco === chaveEndereco) $('mapWait').textContent='Não foi possível carregar o mapa. Use a busca no OpenStreetMap e confira o endereço.'; }
     });
     seletor.addEventListener('change', () => { mostrarServicos();mostrarLocal(); });
     if (anterior && UBS[anterior.ubs]) {
