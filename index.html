@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#075e58"><title>Saúde Fácil — Escolha seu acesso</title><link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+<header class="page-head">
+  <div class="container head-inner">
+    <div class="site-identity">
+      <span class="brand"><a href="index.html">🏥 Saúde Fácil</a></span>
+      <span class="header-subtitle">MVP acadêmico • Cáceres, MT</span>
+    </div>
+    <button class="nav-toggle" type="button" aria-controls="menu-principal" aria-expanded="false">
+      <span class="nav-toggle-icon" aria-hidden="true">☰</span><span>Menu</span>
+    </button>
+    <nav class="nav" id="menu-principal" aria-label="Navegação principal">
+      <a href="index.html" aria-current="page">Início</a>
+      <a href="cadastro.html">Paciente</a>
+      <a href="acesso-profissional.html">Profissional</a>
+    </nav>
+  </div>
+</header>
+<main class="container" id="conteudo">
+  <section class="panel access-panel">
+    <span class="kicker">Bem-vindo ao Saúde Fácil</span>
+    <h1>Como deseja acessar?</h1>
+    <p class="lead">Escolha seu perfil para continuar na demonstração.</p>
+    <div class="role-grid" role="group" aria-label="Escolha do tipo de acesso">
+      <article class="role-card role-patient">
+        <div class="role-symbol" aria-hidden="true">👤</div>
+        <h2>Paciente <span class="role-detail">ou responsável</span></h2>
+        <p class="role-description">Faça um cadastro fictício, receba orientações e simule uma solicitação.</p>
+        <a class="btn btn-teal" href="cadastro.html" aria-label="Começar como paciente ou responsável"><span class="label-desktop">Acessar como paciente</span><span class="label-mobile">Paciente</span></a>
+        <a class="role-secondary" href="triagem.html">Já tenho cadastro fictício</a>
+      </article>
+      <article class="role-card role-professional">
+        <div class="role-symbol" aria-hidden="true">🩺</div>
+        <h2>Profissional <span class="role-detail">da UBS</span></h2>
+        <p class="role-description">Consulte pedidos fictícios e acompanhe o andamento dos atendimentos.</p>
+        <a class="btn btn-primary" href="acesso-profissional.html" aria-label="Acessar a área profissional da UBS"><span class="label-desktop">Acessar área profissional</span><span class="label-mobile">Profissional</span></a>
+        <span class="role-secondary role-secondary-placeholder" aria-hidden="true"></span>
+      </article>
+    </div>
+    <div class="notice warning access-warning"><strong>Protótipo acadêmico — dados fictícios</strong><p>Não possui login real, não acessa os sistemas da Prefeitura ou do SUS, não reserva vagas e não realiza triagem clínica. Não informe CPF, nomes ou sintomas verdadeiros.</p></div>
+  </section>
+</main>
+<footer class="container"><p class="footer-note">MVP navegável • Paciente e profissional • Não oficial</p></footer>
+<script defer src="assets/nav.js"></script>
+</body></html>

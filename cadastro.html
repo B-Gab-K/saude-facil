@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#087c70"><title>Saúde Fácil — Cadastro fictício</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="auth-screen has-header">
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <header class="page-head">
+  <div class="container head-inner">
+    <div class="site-identity">
+      <span class="brand"><a href="index.html">🏥 Saúde Fácil</a></span>
+      <span class="header-subtitle">Área do paciente • Simulação</span>
+    </div>
+    <button class="nav-toggle" type="button" aria-controls="menu-principal" aria-expanded="false">
+      <span class="nav-toggle-icon" aria-hidden="true">☰</span><span>Menu</span>
+    </button>
+    <nav class="nav" id="menu-principal" aria-label="Navegação principal">
+      <a href="index.html">Início</a>
+      <a href="cadastro.html" aria-current="page">Cadastro</a>
+      <a href="triagem.html">Orientação</a>
+      <a href="agendamento.html">Solicitar</a>
+      <a href="historico.html">Meu histórico</a>
+    </nav>
+  </div>
+</header>
+<main class="auth-card" id="conteudo">
+    <ol class="stepper" aria-label="Etapas do paciente"><li aria-current="step"><span class="step-num">1</span>Cadastro</li><li><span class="step-num">2</span>Orientação</li><li><span class="step-num">3</span>Solicitação</li></ol>
+    <div class="hero"><h1>📝 Cadastro fictício</h1><p>Saúde Fácil — Cáceres/MT</p></div>
+    <div class="notice warning"><strong>Use somente dados inventados</strong><p>Dados de saúde são sensíveis nos termos da LGPD. Este protótipo armazena informações no navegador, sem autenticação.</p></div>
+    <form id="form" novalidate class="form-stack">
+      <button type="button" class="btn btn-subtle" id="demo">Preencher dados fictícios</button>
+      <div class="field"><label for="nome">Nome e sobrenome fictícios <span class="required">*</span></label><input id="nome" name="nome" type="text" maxlength="100" autocomplete="off" required placeholder="Ex.: João Fictício"></div>
+      <div class="field"><label for="cpf">CPF fictício <span class="required">*</span></label><input id="cpf" name="cpf" type="text" inputmode="numeric" maxlength="14" autocomplete="off" required placeholder="000.000.000-00"><p class="help">Apenas conferência de formato; não é feita validação de identidade.</p></div>
+      <div class="field"><label for="sus">Cartão SUS fictício (opcional)</label><input id="sus" name="sus" type="text" inputmode="numeric" maxlength="15" autocomplete="off" placeholder="15 dígitos"></div>
+      <div class="field"><label for="nasc">Data de nascimento fictícia <span class="required">*</span></label><input id="nasc" name="nasc" type="date" required></div>
+      <label class="checkbox-line" for="ok"><input type="checkbox" id="ok" required><span>Confirmo que os dados informados são inventados e não pertencem a uma pessoa real.</span></label>
+      <p class="error" id="erro" role="alert" aria-live="assertive"></p>
+      <button class="btn btn-teal" type="submit">Continuar para orientação</button>
+      <a class="btn btn-subtle" href="index.html">Voltar</a>
+    </form>
+  </main>
+  <script src="assets/app.js"></script>
+  <script>
+  (() => {
+    const $ = id => document.getElementById(id);
+    $('cpf').addEventListener('input', e => {
+      const d=e.target.value.replace(/\D/g,'').slice(0,11);
+      e.target.value=d.replace(/^(\d{3})(\d{3})(\d{3})(\d{0,2})$/,(_,a,b,c,s)=>`${a}.${b}.${c}${s?'-'+s:''}`);
+    });
+    $('sus').addEventListener('input', e => e.target.value = e.target.value.replace(/\D/g,'').slice(0,15));
+    $('demo').addEventListener('click', () => {
+      $('nome').value = 'João Fictício'; $('cpf').value = '000.000.000-00'; $('sus').value = '000000000000000';
+      $('nasc').value = '1990-01-01'; $('ok').checked = true; $('erro').textContent = '';
+    });
+    $('form').addEventListener('submit', e => {
+      e.preventDefault();
+      const nome = $('nome').value.trim(), cpf = $('cpf').value.trim(), sus = $('sus').value.trim(), nasc = $('nasc').value;
+      let erro = '';
+      if (nome.split(/\s+/).length < 2) erro = 'Informe um nome fictício e sobrenome.';
+      else if (cpf.replace(/\D/g,'').length !== 11) erro = 'O CPF fictício precisa ter 11 dígitos.';
+      else if (sus && !/^\d{15}$/.test(sus)) erro = 'O Cartão SUS fictício deve ter 15 dígitos.';
+      else if (!nasc || nasc > new Date().toISOString().slice(0,10)) erro = 'Informe uma data de nascimento válida.';
+      else if (!$('ok').checked) erro = 'Confirme que está usando somente dados fictícios.';
+      $('erro').textContent = erro;
+      if (erro) return;
+      if (!SaudeFacil.write('paciente', {nome, cpf, sus, nasc})) {
+        $('erro').textContent = 'Não foi possível armazenar no navegador. Confira as permissões de armazenamento.'; return;
+      }
+      window.location.href = 'triagem.html';
+    });
+  })();
+  </script>
+<script defer src="assets/nav.js"></script>
+</body>
+</html>

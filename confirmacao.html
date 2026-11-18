@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#075e58"><title>Saúde Fácil — Solicitação registrada</title><link rel="stylesheet" href="assets/style.css"></head>
+<body><a class="skip-link" href="#conteudo">Ir para o conteúdo</a><header class="page-head">
+  <div class="container head-inner">
+    <div class="site-identity">
+      <span class="brand"><a href="index.html">🏥 Saúde Fácil</a></span>
+      <span class="header-subtitle">Área do paciente • Simulação</span>
+    </div>
+    <button class="nav-toggle" type="button" aria-controls="menu-principal" aria-expanded="false">
+      <span class="nav-toggle-icon" aria-hidden="true">☰</span><span>Menu</span>
+    </button>
+    <nav class="nav" id="menu-principal" aria-label="Navegação principal">
+      <a href="index.html">Início</a>
+      <a href="cadastro.html">Cadastro</a>
+      <a href="triagem.html">Orientação</a>
+      <a href="agendamento.html" aria-current="page">Solicitar</a>
+      <a href="historico.html">Meu histórico</a>
+    </nav>
+  </div>
+</header>
+<main id="conteudo" class="container"><ol class="stepper" aria-label="Etapas do paciente"><li class="done"><span class="step-num">1</span>Cadastro</li><li class="done"><span class="step-num">2</span>Orientação</li><li aria-current="step"><span class="step-num">3</span>Solicitação</li></ol>
+<section class="panel"><div class="success-icon" aria-hidden="true">✓</div><h1>Solicitação fictícia registrada!</h1><p class="lead">Você concluiu o percurso do paciente nesta demonstração.</p>
+<div class="notice warning"><strong>Importante: não é uma consulta marcada.</strong><p>O sistema não consulta agendas do SUS. A data é somente uma preferência e o horário não foi reservado.</p></div>
+<div id="resumo" aria-live="polite"></div><div class="actions space-top"><a class="btn btn-primary" href="historico.html">Ver meu histórico</a><a class="btn btn-subtle" href="agendamento.html">Nova solicitação fictícia</a></div>
+</section></main><footer class="container"><p class="footer-note">MVP acadêmico • Sem envio de dados a uma UBS</p></footer>
+<script src="assets/app.js"></script><script>
+(()=>{const params=new URLSearchParams(location.search);const id=params.get('id');const item=SaudeFacil.ownAppointments().find(x=>x.id===id);const root=document.getElementById('resumo');if(!item){root.append(SaudeFacil.make('p','Nenhuma solicitação identificada para exibir. Confira seu histórico.','notice'));return;}
+const dl=SaudeFacil.make('dl',null,'detail-list');[['Código de demonstração',item.codigo],['UBS',item.ubs],['Serviço',item.servico],['Data de preferência',SaudeFacil.formatDate(item.data)],['Horário','A confirmar'],['Situação',SaudeFacil.status(item.status).label]].forEach(([label,value])=>{const d=SaudeFacil.make('div',null,'detail-pair');d.append(SaudeFacil.make('dt',label),SaudeFacil.make('dd',value));dl.append(d);});root.append(dl);})();
+</script><script defer src="assets/nav.js"></script>
+</body></html>

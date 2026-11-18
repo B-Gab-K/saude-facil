@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#075e58"><title>Saúde Fácil — Meu histórico</title><link rel="stylesheet" href="assets/style.css"></head>
+<body><a class="skip-link" href="#conteudo">Ir para o conteúdo</a><header class="page-head">
+  <div class="container head-inner">
+    <div class="site-identity">
+      <span class="brand"><a href="index.html">🏥 Saúde Fácil</a></span>
+      <span class="header-subtitle">Área do paciente • Simulação</span>
+    </div>
+    <button class="nav-toggle" type="button" aria-controls="menu-principal" aria-expanded="false">
+      <span class="nav-toggle-icon" aria-hidden="true">☰</span><span>Menu</span>
+    </button>
+    <nav class="nav" id="menu-principal" aria-label="Navegação principal">
+      <a href="index.html">Início</a>
+      <a href="cadastro.html">Cadastro</a>
+      <a href="triagem.html">Orientação</a>
+      <a href="agendamento.html">Solicitar</a>
+      <a href="historico.html" aria-current="page">Meu histórico</a>
+    </nav>
+  </div>
+</header>
+<main id="conteudo" class="container"><section class="panel"><span class="kicker">Acompanhamento do paciente</span><h1>Meu histórico de solicitações</h1><p class="subtitle">Veja o andamento de suas solicitações fictícias e encontre rapidamente o próximo passo.</p><div class="notice warning"><strong>Não são consultas oficiais.</strong><p>Os registros existem apenas neste navegador. A área profissional compartilha os exemplos apenas neste dispositivo, sem envio às UBS.</p></div><p id="mensagem" role="status" aria-live="polite"></p><div id="lista" class="appointments" aria-live="polite"></div><div class="actions space-top"><a class="btn btn-primary" href="agendamento.html">Nova solicitação</a><button class="btn btn-subtle" type="button" id="apagar">Apagar minhas solicitações fictícias</button></div></section></main>
+<footer class="container"><p class="footer-note">Dados fictícios • Armazenamento local • Não é um serviço de saúde</p></footer><script src="assets/app.js"></script><script>
+(()=>{
+ const $=id=>document.getElementById(id), sf=SaudeFacil;
+ function draw(){const root=$('lista');root.replaceChildren();const list=sf.ownAppointments();if(!list.length){root.append(sf.make('div','Você ainda não registrou uma solicitação de demonstração. Selecione “Nova solicitação” para começar.','empty'));return;}
+ for(const a of list){const status=sf.status(a.status), card=sf.make('article',null,'appointment');
+ const head=sf.make('div',null,'appointment-top');const title=sf.make('h2',a.servico);title.style.margin='0';head.append(title,sf.make('span',status.label,'status '+status.tone));
+ const meta=sf.make('div',null,'appointment-meta');[a.ubs,sf.formatDate(a.data),'Horário a confirmar','Código '+a.codigo].forEach(t=>meta.append(sf.make('span',t)));card.append(head,meta);
+ if(a.status==='REAGENDAMENTO SOLICITADO'){const info=sf.make('p','A UBS simulada solicitou uma nova data. Selecione “Escolher nova data” para atualizar sua preferência.','notice warning');card.append(info);}
+ if(!['CANCELADO','ATENDIMENTO FINALIZADO'].includes(a.status)){
+ const actions=sf.make('div',null,'actions appointment-actions');const rebook=sf.make('a',a.status==='REAGENDAMENTO SOLICITADO'?'Escolher nova data':'Alterar data','btn btn-primary btn-sm');rebook.href='agendamento.html?reagendar='+encodeURIComponent(a.id);
+ const cancel=sf.make('button','Cancelar solicitação','btn btn-danger btn-sm');cancel.type='button';cancel.addEventListener('click',()=>{
+  if(!confirm('Deseja cancelar esta solicitação fictícia?'))return;
+  if(sf.updateAppointment(a.id,{status:'CANCELADO'})){$('mensagem').textContent='Solicitação cancelada nesta demonstração.';draw();}else $('mensagem').textContent='Não foi possível cancelar. Tente novamente.';
+ });actions.append(rebook,cancel);card.append(actions);
+ }
+ root.append(card);
+ }}
+ $('apagar').addEventListener('click',()=>{if(!confirm('Apagar suas solicitações fictícias deste navegador?'))return;const current=new Set(sf.ownAppointments().map(x=>x.id));const rest=sf.appointments().filter(x=>!current.has(x.id));if(sf.write('consultas',rest)){$('mensagem').textContent='Suas solicitações fictícias foram apagadas.';draw();}else $('mensagem').textContent='Não foi possível apagar.';});draw();
+})();
+</script><script defer src="assets/nav.js"></script>
+</body></html>

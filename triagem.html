@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#087c70"><title>Saúde Fácil — Orientação de sintomas</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+  <header class="page-head">
+  <div class="container head-inner">
+    <div class="site-identity">
+      <span class="brand"><a href="index.html">🏥 Saúde Fácil</a></span>
+      <span class="header-subtitle">Área do paciente • Simulação</span>
+    </div>
+    <button class="nav-toggle" type="button" aria-controls="menu-principal" aria-expanded="false">
+      <span class="nav-toggle-icon" aria-hidden="true">☰</span><span>Menu</span>
+    </button>
+    <nav class="nav" id="menu-principal" aria-label="Navegação principal">
+      <a href="index.html">Início</a>
+      <a href="cadastro.html">Cadastro</a>
+      <a href="triagem.html" aria-current="page">Orientação</a>
+      <a href="agendamento.html">Solicitar</a>
+      <a href="historico.html">Meu histórico</a>
+    </nav>
+  </div>
+</header>
+  <main class="container" id="conteudo">
+    <ol class="stepper" aria-label="Etapas do paciente"><li class="done"><span class="step-num">1</span>Cadastro</li><li aria-current="step"><span class="step-num">2</span>Orientação</li><li><span class="step-num">3</span>Solicitação</li></ol>
+    <section class="panel">
+      <h1>🩺 Orientação inicial de sintomas</h1>
+      <p class="subtitle">Descreva uma situação <strong>inteiramente fictícia</strong> e veja como o protótipo apresenta orientações de segurança.</p>
+      <div class="notice danger" role="note"><strong>Emergência? Não use este formulário para decidir.</strong><p>Se houver falta de ar importante, dor forte e súbita no peito, sinais de AVC, convulsão ou outra emergência, ligue <strong>192 (SAMU)</strong> ou procure atendimento de emergência imediatamente.</p></div>
+      <form id="formTriagem" class="form-stack" novalidate>
+        <div class="field"><label for="sintomas">Queixa fictícia</label><textarea id="sintomas" maxlength="800" placeholder="Ex.: personagem fictício com febre e dor de garganta há dois dias" aria-describedby="ajuda-sintomas"></textarea><p class="help" id="ajuda-sintomas">A análise não identifica doenças nem exclui situações graves.</p></div>
+        <p class="error" id="erro" role="alert"></p>
+        <button class="btn btn-primary" id="analisarQueixa" type="submit">Analisar queixa fictícia</button>
+      </form>
+      <section id="complemento" class="followup-step" aria-labelledby="complementoTitulo" hidden>
+        <span class="kicker">Etapa complementar</span>
+        <h2 id="complementoTitulo" tabindex="-1">Precisamos confirmar mais uma informação</h2>
+        <p>O texto não apresentou nenhuma das expressões de alerta que este exemplo reconhece. <strong>Isso não significa que a situação seja segura.</strong> Responda à pergunta abaixo para continuar a demonstração.</p>
+        <form id="formComplemento" class="form-stack" novalidate>
+          <fieldset class="followup-fieldset" aria-describedby="alerta-help">
+            <legend class="legend">Na situação fictícia, existe algum destes sintomas?</legend>
+            <p class="help" id="alerta-help">Falta de ar importante, dor forte e repentina no peito, alteração súbita na fala ou força de um lado do corpo, convulsão ou perda de consciência.</p>
+            <div class="choice-list space-top">
+              <label><input type="radio" name="sinal" value="sim"> Sim</label>
+              <label><input type="radio" name="sinal" value="nao"> Não observado</label>
+              <label><input type="radio" name="sinal" value="incerto"> Não sei dizer</label>
+            </div>
+          </fieldset>
+          <p class="error" id="erroComplemento" role="alert"></p>
+          <div class="actions">
+            <button class="btn btn-primary" type="submit">Ver orientação</button>
+            <button class="btn btn-subtle" type="button" id="editarQueixa">Editar queixa</button>
+          </div>
+        </form>
+      </section>
+      <div id="resultado" class="result" role="status" aria-live="polite" hidden>
+        <h2 id="resultadoTitulo"></h2><p id="resultadoMsg"></p><p class="small" id="resultadoPorque"></p>
+      </div>
+      <div class="actions space-top">
+        <a href="agendamento.html" id="seguir" class="btn btn-teal">Continuar para escolher UBS</a>
+        <button type="button" id="verFhir" class="btn btn-subtle">Ver JSON HL7 FHIR (demonstração)</button>
+      </div>
+      <div class="notice warning"><strong>⚠️ Não é diagnóstico nem classificação de risco.</strong><p>É um exemplo didático baseado em sinais de alerta gerais. Uma avaliação presencial por profissional de saúde é necessária para determinar gravidade, tratamento e encaminhamento. Não adie atendimento por causa do resultado.</p></div>
+      <section class="section" aria-labelledby="fontes"><h2 id="fontes">📚 Referências oficiais de saúde</h2><p class="small">Materiais usados como base conceitual. O protótipo <strong>não implementa</strong> integralmente os protocolos clínicos, e as regras exigem validação por profissionais de saúde.</p>
+        <ul class="source-list">
+          <li><a target="_blank" rel="noopener noreferrer" href="https://bvsms.saude.gov.br/bvs/publicacoes/acolhimento_demanda_espontanea_queixas_comuns_cab28v2.pdf">Ministério da Saúde — Caderno de Atenção Básica 28, vol. II: Queixas mais comuns na Atenção Básica</a> (2012)</li>
+          <li><a target="_blank" rel="noopener noreferrer" href="https://www.gov.br/saude/pt-br/composicao/saes/samu-192">Ministério da Saúde — Quando acionar o SAMU 192</a></li>
+          <li><a target="_blank" rel="noopener noreferrer" href="https://www.gov.br/saude/pt-br/assuntos/saude-de-a-a-z/a/avc">Ministério da Saúde — Sinais de alerta de AVC</a></li>
+          <li><a target="_blank" rel="noopener noreferrer" href="https://linhasdecuidado.saude.gov.br/portal/dor-toracica/sou-paciente/">Ministério da Saúde — Dor torácica: orientações ao paciente</a></li>
+        </ul>
+      </section>
+    </section>
+  </main>
+  <footer class="container"><p class="footer-note">Protótipo acadêmico • Dados fictícios • Não vinculado ao SUS ou à Prefeitura</p></footer>
+  <div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo" hidden>
+    <div class="modal-box">
+      <h2 id="modalTitulo">Bundle HL7 FHIR R4 — demonstração</h2>
+      <p class="small" style="margin:0">Exemplo com Patient, Organization, Encounter e Condition <strong>não validado</strong> contra os perfis br-core. Sem código CID-10 ou diagnóstico clínico atribuído.</p>
+      <pre id="json" tabindex="0"></pre>
+      <div class="actions"><button class="btn btn-primary btn-sm" type="button" id="copiar">Copiar JSON</button><button class="btn btn-subtle btn-sm" type="button" id="fechar">Fechar</button></div>
+    </div>
+  </div>
+  <script src="assets/app.js"></script>
+  <script>
+  (() => {
+    'use strict';
+    const $ = id => document.getElementById(id);
+    const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    // Detecção conservadora de expressões de alerta: não interpreta negações, contexto ou gravidade.
+    // Não usada para descartar urgências; se aparecer um alerta, orienta avaliação imediata.
+    const alarmes = [
+      { termo: 'falta de ar', exp: /falta de ar|nao consigo respirar|dificuldade para respirar|dificuldade de respirar/ },
+      { termo: 'dor no peito', exp: /dor no peito|aperto no peito|pressao no peito/ },
+      { termo: 'alteração de fala/força', exp: /fala enrolada|dificuldade para falar|perda de forca|rosto torto|boca torta/ },
+      { termo: 'convulsão', exp: /convulsao/ },
+      { termo: 'desmaio', exp: /desmaio|perda de consciencia/ }
+    ];
+    let ultimo = {texto:'', destino:'indefinido', sinal:'incerto'};
+
+    function limparOrientacao() {
+      $('resultado').hidden = true;
+      $('complemento').hidden = true;
+      $('erro').textContent = '';
+      $('erroComplemento').textContent = '';
+      $('seguir').hidden = true;
+      // Evita reaproveitar uma orientação anterior após editar a queixa.
+      SaudeFacil.write('triagem', {texto:'', destino:'indefinido', sinal:'incerto'});
+      document.querySelectorAll('input[name="sinal"]').forEach(input => { input.checked = false; });
+    }
+
+    function mostrarOrientacao({texto, destino, titulo, mensagem, motivo, sinal}) {
+      ultimo = {texto, destino, sinal};
+      SaudeFacil.write('triagem', ultimo);
+      $('complemento').hidden = true;
+      $('resultado').hidden = false;
+      $('resultado').className = `result ${destino === 'emergencia' ? 'urgent' : destino === 'avaliacao' ? 'neutral' : ''}`;
+      $('resultadoTitulo').textContent = titulo;
+      $('resultadoMsg').textContent = mensagem;
+      $('resultadoPorque').textContent = `Por que esta orientação? ${motivo}`;
+      $('seguir').hidden = destino !== 'ubs';
+      $('resultado').scrollIntoView({behavior:'smooth',block:'nearest'});
+    }
+
+    // Passo 1: identificar expressões no texto antes de pedir qualquer resposta adicional.
+    $('formTriagem').addEventListener('submit', e => {
+      e.preventDefault();
+      const texto = $('sintomas').value.trim();
+      limparOrientacao();
+      if (!texto) {
+        $('erro').textContent = 'Descreva uma queixa fictícia para iniciar a análise.';
+        $('sintomas').focus();
+        return;
+      }
+      const encontrados = alarmes.filter(a => a.exp.test(norm(texto))).map(a => a.termo);
+      if (encontrados.length) {
+        // Uma expressão de alerta exige aviso imediato, mesmo sem uma segunda pergunta.
+        mostrarOrientacao({
+          texto, sinal:'identificado_no_texto', destino:'emergencia',
+          titulo:'🚨 Possível sinal de alerta: procure ajuda imediatamente',
+          mensagem:'Se o sintoma estiver presente, não aguarde uma consulta agendada. Ligue 192 (SAMU) ou procure um serviço de emergência. A análise não determina a gravidade.',
+          motivo:`Foi identificada a expressão “${encontrados.join('”, “')}” na descrição. A regra não entende contexto, tempo ou negações e pode gerar alertas excessivos.`
+        });
+        return;
+      }
+      // Passo 2: quando nenhuma expressão foi identificada, não concluir que há baixo risco.
+      // Uma pergunta objetiva é exibida somente aqui.
+      $('complemento').hidden = false;
+      $('complementoTitulo').focus();
+    });
+
+    // Passo 3: o usuário responde a uma pergunta simples, sem precisar identificar
+    // sozinho o conceito técnico de "sinal de alerta".
+    $('formComplemento').addEventListener('submit', e => {
+      e.preventDefault();
+      const texto = $('sintomas').value.trim();
+      const sinal = document.querySelector('input[name="sinal"]:checked')?.value;
+      $('erroComplemento').textContent = '';
+      if (!texto) {
+        limparOrientacao();
+        $('erro').textContent = 'Descreva a queixa fictícia antes de continuar.';
+        $('sintomas').focus();
+        return;
+      }
+      if (!sinal) {
+        $('erroComplemento').textContent = 'Selecione uma resposta para ver a orientação.';
+        document.querySelector('input[name="sinal"]').focus();
+        return;
+      }
+      if (sinal === 'sim') {
+        mostrarOrientacao({texto, sinal, destino:'emergencia',
+          titulo:'🚨 Possível sinal de alerta: procure ajuda imediatamente',
+          mensagem:'Se um dos sinais descritos estiver presente, não aguarde agendamento. Ligue 192 (SAMU) ou procure um serviço de emergência.',
+          motivo:'Na pergunta complementar foi indicada a presença de um dos sintomas de alerta.'});
+      } else if (sinal === 'incerto') {
+        mostrarOrientacao({texto, sinal, destino:'avaliacao',
+          titulo:'⚠️ Procure orientação de um profissional de saúde',
+          mensagem:'Há dúvida sobre sintomas de alerta. Não use esta ferramenta para decidir se é seguro esperar. Procure avaliação humana; em emergência, ligue 192.',
+          motivo:'Uma resposta incerta não permite descartar uma situação urgente.'});
+      } else {
+        mostrarOrientacao({texto, sinal, destino:'ubs',
+          titulo:'ℹ️ Procure a UBS para avaliação',
+          mensagem:'A UBS pode realizar acolhimento e avaliação de situações não emergenciais. A ferramenta não determina a gravidade nem confirma que é seguro aguardar um agendamento.',
+          motivo:'Não houve reconhecimento automático das expressões monitoradas e os sinais perguntados não foram observados no exemplo. Isso NÃO descarta outros sinais de urgência.'});
+      }
+    });
+
+    $('sintomas').addEventListener('input', limparOrientacao);
+    $('editarQueixa').addEventListener('click', () => {
+      limparOrientacao();
+      $('sintomas').focus();
+    });
+    // O registro descreve a queixa autorrelatada; nunca codifica doença nem um diagnóstico.
+    function bundleFHIR() {
+      const p = SaudeFacil.patient(); const uid = () => SaudeFacil.id();
+      const pid=uid(), oid=uid(), eid=uid(), cid=uid(); const urn = id => 'urn:uuid:'+id;
+      const agora = new Date().toISOString(), partes = p.nome.trim().split(/\s+/);
+      const sobreNome = partes.length > 1 ? partes.pop() : partes[0];
+      const identificadores = [];
+      if (p.cpf) identificadores.push({system:'https://saude.gov.br/fhir/sid/cpf',value:p.cpf.replace(/\D/g,'')});
+      if (p.sus) identificadores.push({system:'https://saude.gov.br/fhir/sid/cns',value:p.sus});
+      const organizacao = {reference: urn(oid), display:'Unidade de saúde não definida (fictícia)'};
+      const paciente = {reference: urn(pid), display:p.nome};
+      return {
+        resourceType:'Bundle', type:'collection', timestamp:agora,
+        entry:[
+          {fullUrl:urn(pid),resource:{resourceType:'Patient',id:pid,identifier:identificadores,name:[{family:sobreNome,given:partes.length ? partes : [sobreNome]}],birthDate:p.nasc}},
+          {fullUrl:urn(oid),resource:{resourceType:'Organization',id:oid,name:'Unidade de saúde não definida (fictícia)'}},
+          {fullUrl:urn(eid),resource:{resourceType:'Encounter',id:eid,status:'planned',class:{system:'http://terminology.hl7.org/CodeSystem/v3-ActCode',code:ultimo.destino==='emergencia'?'EMER':'AMB'},subject:paciente,serviceProvider:organizacao,reasonCode:[{text:ultimo.texto || 'Queixa não informada'}]}},
+          {fullUrl:urn(cid),resource:{resourceType:'Condition',id:cid,verificationStatus:{coding:[{system:'http://terminology.hl7.org/CodeSystem/condition-ver-status',code:'unconfirmed'}]},code:{text:'Queixa autorrelatada, sem diagnóstico'},subject:paciente,encounter:{reference:urn(eid)},recordedDate:agora,note:[{text:ultimo.texto || 'Queixa não informada'}]}}
+        ]
+      };
+    }
+    let focoAnterior;
+    function fechar() { $('modal').hidden = true; focoAnterior?.focus(); }
+    $('verFhir').addEventListener('click', () => {
+      focoAnterior = document.activeElement;
+      $('json').textContent = JSON.stringify(bundleFHIR(), null, 2);
+      $('modal').hidden = false; $('fechar').focus();
+    });
+    $('fechar').addEventListener('click', fechar);
+    $('modal').addEventListener('click', e => { if (e.target === $('modal')) fechar(); });
+    document.addEventListener('keydown', e => {
+      if ($('modal').hidden) return;
+      if (e.key === 'Escape') fechar();
+      if (e.key === 'Tab') {
+        const alvos = [$('copiar'), $('fechar')], idx = alvos.indexOf(document.activeElement);
+        if (e.shiftKey && (idx <= 0)) { e.preventDefault(); alvos.at(-1).focus(); }
+        else if (!e.shiftKey && idx === alvos.length - 1) { e.preventDefault(); alvos[0].focus(); }
+      }
+    });
+    $('copiar').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText($('json').textContent); $('copiar').textContent='Copiado!'; }
+      catch (_) { $('json').focus(); $('copiar').textContent='Selecione o JSON para copiar'; }
+    });
+    // Fica oculto até uma orientação não emergencial; sem orientar diagnóstico.
+    $('seguir').hidden = true;
+  })();
+  </script>
+<script defer src="assets/nav.js"></script>
+</body>
+</html>
