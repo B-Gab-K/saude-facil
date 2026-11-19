@@ -21,7 +21,7 @@
     if (text) { field.value = (field.value.trim() + ' ' + text.trim()).trim().slice(0, field.maxLength); field.dispatchEvent(new Event('input', { bubbles: true })); }
   };
   recognition.onerror = event => { status.textContent = event.error === 'not-allowed' ? 'Acesso ao microfone negado. Permita o acesso no navegador ou digite a queixa.' : 'Não foi possível transcrever. Tente novamente ou digite a queixa.'; };
-  recognition.onend = () => { listening = false; button.textContent = '🎙️ Ditar sintomas'; };
+  recognition.onend = () => { listening = false; button.textContent = 'Ditar motivo do atendimento'; };
   button.addEventListener('click', () => {
     if (listening) { recognition.stop(); return; }
     try { recognition.start(); } catch (_) { status.textContent = 'Não foi possível iniciar o microfone. Tente novamente.'; }

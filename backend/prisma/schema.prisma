@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -23,4 +24,134 @@ model Appointment {
 
   @@index([criadoEm])
   @@index([status])
+}
+
+enum Role {
+  PATIENT
+  RECEPTION
+  NURSE
+  COORDINATOR
+  ADMIN
+}
+
+enum BookingStatus {
+  CONFIRMED
+  IN_REVIEW
+  RESCHEDULE_REQUESTED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id                String    @id @default(uuid())
+  emailHash         String    @unique
+  identityHash      String?   @unique
+  profileCipher     String
+  searchTokens      String[]
+  passwordHash      String
+  role              Role      @default(PATIENT)
+  unitId            String?
+  unit              HealthUnit? @relation(fields: [unitId], references: [id])
+  verifiedAt        DateTime?
+  disabled          Boolean   @default(false)
+  failedLogins      Int       @default(0)
+  lockedUntil       DateTime?
+  createdAt         DateTime  @default(now())
+  sessions          Session[]
+  bookings          Booking[]
+}
+
+model Session {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  lastSeen  DateTime @default(now())
+  @@index([expiresAt])
+}
+
+model HealthUnit {
+  id          String    @id @default(uuid())
+  name        String
+  address     String
+  sourceUrl   String
+  timezone    String    @default("America/Cuiaba")
+  verifiedAt  DateTime?
+  verifiedBy  String?
+  active      Boolean   @default(false)
+  users       User[]
+  services    CareService[]
+}
+
+model CareService {
+  id          String    @id @default(uuid())
+  unitId      String
+  unit        HealthUnit @relation(fields: [unitId], references: [id])
+  name        String
+  active      Boolean   @default(false)
+  verifiedAt  DateTime?
+  verifiedBy  String?
+  evidence    String
+  slots       ScheduleSlot[]
+  @@unique([unitId, name])
+}
+
+model ScheduleSlot {
+  id          String    @id @default(uuid())
+  serviceId   String
+  service     CareService @relation(fields: [serviceId], references: [id])
+  resource    String
+  startsAt    DateTime  @db.Timestamptz(3)
+  endsAt      DateTime  @db.Timestamptz(3)
+  active      Boolean   @default(true)
+  createdBy   String
+  bookings    Booking[]
+  @@index([serviceId, startsAt])
+}
+
+model Booking {
+  id             String    @id @default(uuid())
+  code           String    @unique @default(uuid())
+  patientId      String
+  patient        User      @relation(fields: [patientId], references: [id])
+  slotId         String
+  slot           ScheduleSlot @relation(fields: [slotId], references: [id])
+  status         BookingStatus @default(CONFIRMED)
+  reasonCipher   String
+  noteCipher     String
+  version        Int       @default(1)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  sensitivePurgedAt DateTime?
+  @@index([patientId, createdAt])
+  @@index([status, createdAt])
+}
+
+model AuditEvent {
+  id          String   @id @default(uuid())
+  actorId     String?
+  action      String
+  targetId    String?
+  detailCipher String
+  createdAt   DateTime @default(now())
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+}
+
+model ClinicalReview {
+  id          String   @id @default(uuid())
+  version     String
+  reviewerId  String
+  evidence    String
+  approvedAt  DateTime @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  @@index([version, expiresAt])
+}
+
+model RateBucket {
+  id         String   @id
+  count      Int      @default(1)
+  expiresAt  DateTime
+  @@index([expiresAt])
 }

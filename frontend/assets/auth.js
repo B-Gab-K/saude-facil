@@ -1,0 +1,33 @@
+(async () => {
+  'use strict';
+  const sf = SaudeFacil, $ = id => document.getElementById(id);
+  const page = location.pathname.split('/').pop();
+  if (page === 'cadastro.html') {
+    try {
+      const units = await sf.request('/catalog/units');
+      units.forEach(unit => $('unitId').add(new Option(unit.name, unit.id)));
+      if (!units.length) { $('erro').textContent = 'Ainda não há unidades validadas. Aguarde a liberação pela instituição.'; $('salvar').disabled = true; }
+    } catch (error) { sf.error($('erro'), error); }
+    $('form').addEventListener('submit', async event => {
+      event.preventDefault(); $('salvar').disabled = true; $('erro').textContent = '';
+      try {
+        await sf.request('/auth/register', { method: 'POST', body: { email: $('email').value.trim(), password: $('password').value, nome: $('nome').value.trim(), cpf: $('cpf').value.replace(/\D/g, ''), nasc: $('nasc').value, unitId: $('unitId').value } });
+        await sf.login($('email').value.trim(), $('password').value); location.href = 'historico.html';
+      } catch (error) { sf.error($('erro'), error); $('salvar').disabled = false; }
+    });
+  } else if (page === 'login.html' || page === 'acesso-profissional.html') {
+    $('form').addEventListener('submit', async event => {
+      event.preventDefault(); $('entrar').disabled = true;
+      try { const user = await sf.login($('email').value.trim(), $('password').value); location.href = user.role === 'PATIENT' ? 'historico.html' : 'painel-profissional.html'; }
+      catch (error) { sf.error($('erro'), error); $('entrar').disabled = false; }
+    });
+  } else if (page === 'conta.html') {
+    const user = await sf.requireAuth(); if (!user) return;
+    $('perfil').textContent = `${user.nome} · ${user.role} · ${user.verified ? 'Identidade conferida' : 'Aguardando conferência presencial de identidade na unidade escolhida'}`;
+    $('form').addEventListener('submit', async event => {
+      event.preventDefault();
+      try { await sf.request('/auth/password', { method: 'POST', body: { currentPassword: $('currentPassword').value, newPassword: $('newPassword').value } }); location.replace('login.html'); }
+      catch (error) { sf.error($('erro'), error); }
+    });
+  }
+})();

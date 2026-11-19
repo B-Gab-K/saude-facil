@@ -1,63 +1,28 @@
 import { Type } from 'class-transformer';
-import { IsDateString, IsDefined, IsIn, IsNotEmpty, IsObject, IsString, Matches, MaxLength, ValidateIf, ValidateNested } from 'class-validator';
-import { AppointmentStatus } from '../appointment-status';
-
-class PatientDto {
-  @IsString() @IsNotEmpty() @Matches(/\S/) @MaxLength(100)
-  nome!: string;
-
-  @IsString() @Matches(/^(?:\d{11}|\d{3}\.\d{3}\.\d{3}-\d{2})$/)
-  cpf!: string;
-
-  @IsDateString({ strict: true }) @Matches(/^\d{4}-\d{2}-\d{2}$/)
-  nasc!: string;
-
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsString() @Matches(/^(?:\d{15})?$/)
-  sus?: string;
-}
-
+import { BookingStatus } from '../../../generated/prisma';
+import { IsDateString, IsEnum, IsIn, IsInt, IsOptional, IsString, IsUUID, Max, MaxLength, Min, ValidateIf } from 'class-validator';
 export class CreateAppointmentDto {
-  @IsString() @IsNotEmpty() @Matches(/\S/) @MaxLength(100)
-  id!: string;
-
-  @IsString() @IsNotEmpty() @Matches(/\S/) @MaxLength(30)
-  codigo!: string;
-
-  @IsString() @IsNotEmpty() @Matches(/\S/) @MaxLength(150)
-  ubs!: string;
-
-  @IsString() @IsNotEmpty() @Matches(/\S/) @MaxLength(100)
-  servico!: string;
-
-  @IsDateString({ strict: true }) @Matches(/^\d{4}-\d{2}-\d{2}$/)
-  data!: string;
-
-  @IsDefined() @IsObject() @ValidateNested() @Type(() => PatientDto)
-  paciente!: PatientDto;
-
-  @IsString() @IsNotEmpty() @Matches(/\S/) @MaxLength(800)
-  triagemResumo!: string;
+  @IsUUID() slotId!: string;
+  @ValidateIf((_object, value) => value !== undefined) @IsString() @MaxLength(800) reason = '';
 }
-
 export class UpdateAppointmentDto {
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsIn(Object.values(AppointmentStatus))
-  status?: string;
-
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsDateString({ strict: true }) @Matches(/^\d{4}-\d{2}-\d{2}$/)
-  data?: string;
-
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsString() @IsNotEmpty() @Matches(/\S/) @MaxLength(150)
-  ubs?: string;
-
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsString() @IsNotEmpty() @Matches(/\S/) @MaxLength(100)
-  servico?: string;
-
-  @ValidateIf((_object, value) => value !== undefined)
-  @IsString() @MaxLength(1000)
-  observacao?: string;
+  @IsInt() @Min(1) version!: number;
+  @IsEnum(BookingStatus) status!: BookingStatus;
+  @ValidateIf((_object, value) => value !== undefined) @IsString() @MaxLength(1000) observation?: string;
+}
+export class RescheduleDto {
+  @IsInt() @Min(1) version!: number;
+  @IsUUID() slotId!: string;
+}
+export class AppointmentQuery {
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10000) page = 1;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;
+  @IsOptional() @IsEnum(BookingStatus) status?: BookingStatus;
+  @IsOptional() @IsUUID() unitId?: string;
+  @IsOptional() @IsUUID() serviceId?: string;
+  @IsOptional() @IsString() @MaxLength(100) q?: string;
+  @IsOptional() @IsDateString({ strict: true }) from?: string;
+  @IsOptional() @IsDateString({ strict: true }) to?: string;
+  @IsOptional() @IsIn(['createdAt', 'startsAt']) sort: 'createdAt' | 'startsAt' = 'createdAt';
+  @IsOptional() @IsIn(['asc', 'desc']) order: 'asc' | 'desc' = 'desc';
 }
