@@ -82,7 +82,7 @@
 
 ## Revisão adicional — barra de navegação e escolha de acesso
 
-- [ ] Abrir `index.html` em 1440 × 900, 390 × 844 e 320 × 720: os dois perfis permanecem lado a lado, com os botões de acesso visíveis antes da primeira rolagem.
+- [ ] Abrir `frontend/index.html` em 1440 × 900, 390 × 844 e 320 × 720: os dois perfis permanecem lado a lado, com os botões de acesso visíveis antes da primeira rolagem.
 - [ ] No desktop, observar barra de navegação com a página atual identificada.
 - [ ] No celular, abrir o botão **Menu**, navegar com Tab e fechar com Escape; o botão reflete o estado `aria-expanded`.
 - [ ] Abrir Cadastro, Orientação, Solicitar, Histórico, Acesso profissional e Solicitações pela barra.

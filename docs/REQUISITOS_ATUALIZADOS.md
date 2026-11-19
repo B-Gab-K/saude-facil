@@ -20,18 +20,18 @@ Essas personas **são hipóteses fictícias do grupo**, ainda não validadas com
 
 | ID | Prioridade | Requisito | Tela / demonstração |
 |---|---|---|---|
-| RF01 | Alta | Separar claramente a entrada em paciente e profissional | `index.html` |
-| RF02 | Alta | Permitir cadastro *fictício* com validação básica de campos | `cadastro.html` |
-| RF03 | Alta | Analisar primeiro as expressões da queixa fictícia e apresentar pergunta complementar apenas quando nenhuma expressão monitorada for identificada, sem atribuir diagnóstico | `triagem.html` |
-| RF04 | Alta | Registrar solicitação de preferência por UBS, serviço e data | `agendamento.html` |
-| RF05 | Alta | Exibir confirmação inequívoca após salvar solicitação | `confirmacao.html` |
-| RF06 | Alta | Mostrar ao paciente seu histórico e os status textuais | `historico.html` |
-| RF07 | Alta | Fornecer acesso demonstrativo da equipe, sem simular login verdadeiro | `acesso-profissional.html` |
-| RF08 | Alta | Listar, pesquisar e filtrar pedidos fictícios | `painel-profissional.html` |
-| RF09 | Alta | Permitir atualização de andamento de uma solicitação | `atendimento-profissional.html` |
-| RF10 | Média | Exibir mapa/rota da UBS quando o endereço foi confirmado para o protótipo | `agendamento.html` |
-| RF11 | Média | Permitir reagendamento ou cancelamento com confirmação | `agendamento.html` e `historico.html` |
-| RF12 | Média | Exibir JSON HL7 FHIR didático de interoperabilidade | `triagem.html` |
+| RF01 | Alta | Separar claramente a entrada em paciente e profissional | `frontend/index.html` |
+| RF02 | Alta | Permitir cadastro *fictício* com validação básica de campos | `frontend/cadastro.html` |
+| RF03 | Alta | Analisar primeiro as expressões da queixa fictícia e apresentar pergunta complementar apenas quando nenhuma expressão monitorada for identificada, sem atribuir diagnóstico | `frontend/triagem.html` |
+| RF04 | Alta | Registrar solicitação de preferência por UBS, serviço e data | `frontend/agendamento.html` |
+| RF05 | Alta | Exibir confirmação inequívoca após salvar solicitação | `frontend/confirmacao.html` |
+| RF06 | Alta | Mostrar ao paciente seu histórico e os status textuais | `frontend/historico.html` |
+| RF07 | Alta | Fornecer acesso demonstrativo da equipe, sem simular login verdadeiro | `frontend/acesso-profissional.html` |
+| RF08 | Alta | Listar, pesquisar e filtrar pedidos fictícios | `frontend/painel-profissional.html` |
+| RF09 | Alta | Permitir atualização de andamento de uma solicitação | `frontend/atendimento-profissional.html` |
+| RF10 | Média | Exibir mapa/rota da UBS quando o endereço foi confirmado para o protótipo | `frontend/agendamento.html` |
+| RF11 | Média | Permitir reagendamento ou cancelamento com confirmação | `frontend/agendamento.html` e `frontend/historico.html` |
+| RF12 | Média | Exibir JSON HL7 FHIR didático de interoperabilidade | `frontend/triagem.html` |
 
 ## 4. Requisitos não funcionais (RNF)
 
