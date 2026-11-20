@@ -6,7 +6,7 @@ Contas individuais, permissões por perfil/unidade, identidade conferida presenc
 
 O código está preparado para validação institucional. Ainda faltam dados oficiais de oferta/horários, aprovação dos responsáveis e políticas institucionais: veja [pendências e fontes](docs/VALIDACAO_INSTITUCIONAL.md). Para avaliação local, use dados inventados até essa liberação.
 
-A [hospedagem da demonstração](docs/HOSPEDAGEM_DEMONSTRACAO.md) dispõe de Blueprint Render com aplicação e PostgreSQL gratuitos, migrações e dados fictícios na inicialização. O modo de demonstração é separado da operação institucional e exibe aviso nas páginas. Criar a hospedagem ainda depende de uma conta autorizada e do envio desta versão ao repositório remoto.
+A [demonstração pública](https://saude-facil-demo-hhyy.onrender.com) foi publicada no Render em 20/11/2026, com aplicação e PostgreSQL gratuitos, migrações e dados fictícios na inicialização. O modo de demonstração é separado da operação institucional e exibe aviso nas páginas. A [documentação de hospedagem](docs/HOSPEDAGEM_DEMONSTRACAO.md) registra a verificação e os limites do plano gratuito, incluindo a expiração do banco em 20/12/2026.
 
 ## Estrutura
 
