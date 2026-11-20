@@ -7,7 +7,7 @@ const { AuthService } = require('../dist/auth/auth.service');
 const { validateDemoTarget } = require('../dist/cli/seed-demo');
 
 function environment(t, overrides = {}) {
-  const keys = ['NODE_ENV', 'APP_ENV', 'FRONTEND_ORIGINS', 'RENDER', 'RENDER_EXTERNAL_URL', 'TLS_TERMINATION', 'TLS_CERT_PATH', 'TLS_KEY_PATH', 'DATA_ENCRYPTION_KEY', 'DATA_ENCRYPTION_KEY_FILE', 'LOOKUP_HMAC_KEY', 'LOOKUP_HMAC_KEY_FILE', 'DEMO_MODE', 'DATABASE_URL', 'NOTIFICATION_MODE', 'DEMO_ADMIN_PASSWORD', 'DEMO_PATIENT_PASSWORD', 'DEMO_STAFF_PASSWORD'];
+  const keys = ['NODE_ENV', 'APP_ENV', 'FRONTEND_ORIGINS', 'RENDER', 'RENDER_EXTERNAL_URL', 'TLS_TERMINATION', 'TLS_CERT_PATH', 'TLS_KEY_PATH', 'DATA_ENCRYPTION_KEY', 'DATA_ENCRYPTION_KEY_FILE', 'LOOKUP_HMAC_KEY', 'LOOKUP_HMAC_KEY_FILE', 'DEMO_MODE', 'DATABASE_URL', 'NOTIFICATION_MODE', 'DEMO_ADMIN_PASSWORD', 'DEMO_PATIENT_PASSWORD', 'DEMO_STAFF_PASSWORD', 'DEMO_PASSWORD_RESET_ID'];
   const previous = Object.fromEntries(keys.map(key => [key, process.env[key]]));
   for (const key of keys) delete process.env[key];
   Object.assign(process.env, { NODE_ENV: 'production', APP_ENV: 'staging', TLS_TERMINATION: 'proxy', FRONTEND_ORIGINS: 'https://demo.example.test', DATA_ENCRYPTION_KEY: randomBytes(32).toString('base64'), LOOKUP_HMAC_KEY: randomBytes(32).toString('hex'), ...overrides });
@@ -54,6 +54,8 @@ test('Render deriva a origem de sua configuração e aceita chaves aleatórias b
 test('seed fictício recusa produção, banco comum, senha ausente e notificações reais', t => {
   environment(t, { DEMO_MODE: 'true', DATABASE_URL: 'postgresql://test:test@localhost/saude_facil_demo', DEMO_ADMIN_PASSWORD: 'admin-random-test-only', DEMO_PATIENT_PASSWORD: 'patient-random-test-only', DEMO_STAFF_PASSWORD: 'staff-random-test-only' });
   validateDemoTarget(new ConfigService());
+  process.env.DEMO_PASSWORD_RESET_ID = 'invalid reset'; assert.throws(() => validateDemoTarget(new ConfigService()), /DEMO_PASSWORD_RESET_ID/);
+  delete process.env.DEMO_PASSWORD_RESET_ID;
   process.env.APP_ENV = 'production'; assert.throws(() => new ConfigService(), /Demonstração exige/);
   process.env.APP_ENV = 'staging'; process.env.DATABASE_URL = 'postgresql://test:test@localhost/saude_facil';
   assert.throws(() => validateDemoTarget(new ConfigService()), /banco exclusivo/);

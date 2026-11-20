@@ -19,6 +19,8 @@ export function validateDemoTarget(config: ConfigService) {
   if (!config.demoMode || !['staging', 'test'].includes(config.environment)) throw new Error('Seed de demonstração exige DEMO_MODE=true em staging ou test.');
   const database = new URL(process.env.DATABASE_URL || '').pathname;
   if (!/_demo$|_test$/.test(database)) throw new Error('Seed de demonstração exige banco exclusivo terminado em _demo ou _test.');
+  const resetId = process.env.DEMO_PASSWORD_RESET_ID;
+  if (resetId && !/^[a-zA-Z0-9_-]{8,80}$/.test(resetId)) throw new Error('DEMO_PASSWORD_RESET_ID deve identificar uma operação com 8 a 80 caracteres alfanuméricos, hífen ou sublinhado.');
   for (const account of demoAccounts) {
     const password = config.secret(account.passwordKey);
     if (!password || password.length < 12 || password.length > 128) throw new Error(`Configure ${account.passwordKey} com 12 a 128 caracteres, sem senha padrão.`);
@@ -31,6 +33,8 @@ export async function seedDemo(prisma: PrismaClient, config: ConfigService, now 
   return prisma.$transaction(async tx => {
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(58291002)`;
     const initialized = await tx.auditEvent.findFirst({ where: { action: 'DEMO_INITIALIZED', targetId: marker } });
+    const resetId = process.env.DEMO_PASSWORD_RESET_ID;
+    if (resetId && !initialized) throw new Error('Redefinição exige uma demonstração já inicializada.');
     if (!initialized) {
       if (await tx.user.count() || await tx.healthUnit.count() || await tx.appointment.count()) throw new Error('O seed não modifica um banco já ocupado por outra instalação.');
       await tx.healthUnit.create({ data: { id: unitId, name: 'Unidade Fictícia — Demonstração', address: 'Endereço fictício, Cáceres MT', sourceUrl: 'https://example.invalid/demonstracao', active: true, verifiedAt: now, verifiedBy: marker, responseMinutes: 60 } });
@@ -48,6 +52,24 @@ export async function seedDemo(prisma: PrismaClient, config: ConfigService, now 
       // Refuse to continue with replacement keys that cannot read the existing data.
       crypto.decrypt(initialized.detailCipher, 'audit');
     }
+    let passwordsReset = false;
+    if (resetId && !await tx.auditEvent.findFirst({ where: { action: 'DEMO_PASSWORDS_RESET', targetId: resetId } })) {
+      // Only the five synthetic identities belong to this maintenance operation.
+      const targets = [];
+      for (const account of demoAccounts) {
+        const user = await tx.user.findUnique({ where: { emailHash: crypto.lookup(account.email, 'email') } });
+        if (!user || user.role !== account.role || crypto.decrypt<{ email: string }>(user.profileCipher, `user:${user.id}`).email !== account.email) {
+          throw new Error('As cinco contas fictícias esperadas precisam existir com seus perfis originais.');
+        }
+        targets.push({ account, user });
+      }
+      for (const { account, user } of targets) {
+        await tx.user.update({ where: { id: user.id }, data: { passwordHash: await crypto.hashPassword(config.secret(account.passwordKey)), failedLogins: 0, lockedUntil: null } });
+      }
+      await tx.session.deleteMany({ where: { userId: { in: targets.map(({ user }) => user.id) } } });
+      await tx.auditEvent.create({ data: { action: 'DEMO_PASSWORDS_RESET', targetId: resetId, detailCipher: crypto.encrypt({ synthetic: true, accounts: targets.length }, 'audit') } });
+      passwordsReset = true;
+    }
     let created = 0;
     for (let day = 1; day <= 7; day++) {
       for (const hour of [13, 14, 15]) {
@@ -58,7 +80,7 @@ export async function seedDemo(prisma: PrismaClient, config: ConfigService, now 
         }
       }
     }
-    return { initialized: !initialized, createdSlots: created };
+    return { initialized: !initialized, createdSlots: created, passwordsReset };
   }, { timeout: 30000 });
 }
 
@@ -68,7 +90,7 @@ async function main() {
   const prisma = new PrismaClient();
   try {
     const result = await seedDemo(prisma, config);
-    process.stdout.write(`Demonstração preparada; ${result.createdSlots} horários fictícios adicionados. Credenciais não são exibidas nem redefinidas.\n`);
+    process.stdout.write(`Demonstração preparada; ${result.createdSlots} horários fictícios adicionados. Redefinição de senhas: ${result.passwordsReset ? 'concluída' : 'não executada'}. Credenciais não são exibidas.\n`);
   } finally { await prisma.$disconnect(); }
 }
 if (require.main === module) main().catch(() => { process.stderr.write('Falha ao preparar demonstração. Confira ambiente, banco exclusivo, senhas e chaves originais.\n'); process.exitCode = 1; });

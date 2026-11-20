@@ -23,11 +23,17 @@ Os ambientes locais e seus segredos foram preservados. A demonstração anterior
 
 Contas: `paciente@example.test`, `recepcao@example.test`, `enfermagem@example.test`, `coordenacao@example.test` e `admin@example.test`. Os três perfis de equipe compartilham a senha fictícia `DEMO_STAFF_PASSWORD` nesta demonstração; isso não é um procedimento para operação institucional. A conferência de identidade das contas de exemplo é simulada e registrada como tal. Nenhuma revisão clínica é criada automaticamente.
 
-O seed exige `DEMO_MODE=true`, ambiente `staging` ou `test`, banco terminado em `_demo` ou `_test` e senhas válidas. Recusa bancos ocupados por outra instalação. Pode ser repetido sem redefinir contas, senhas ou reservas: mantém os dados e acrescenta horários ainda não cadastrados para os próximos sete dias. Isso ocorre na inicialização, não por uma tarefa periódica. Uma instância que fique ligada por muitos dias pode precisar de novos horários na gestão ou de reinicialização controlada. Se houver troca das chaves, a inicialização recusa ler o marcador anterior; não regenere chaves de uma instalação existente.
+O seed exige `DEMO_MODE=true`, ambiente `staging` ou `test`, banco terminado em `_demo` ou `_test` e senhas válidas. Recusa bancos ocupados por outra instalação. Por padrão, pode ser repetido sem redefinir contas, senhas ou reservas: mantém os dados e acrescenta horários ainda não cadastrados para os próximos sete dias. Isso ocorre na inicialização, não por uma tarefa periódica. Uma instância que fique ligada por muitos dias pode precisar de novos horários na gestão ou de reinicialização controlada. Se houver troca das chaves, a inicialização recusa ler o marcador anterior; não regenere chaves de uma instalação existente.
 
 No plano gratuito, o Render suspende a aplicação após 15 minutos sem tráfego, e o retorno pode levar cerca de um minuto. O banco gratuito expira após 30 dias e não possui backup gerenciado. SMTP nas portas habituais e shell remoto também não estão disponíveis nesse plano. A demonstração mantém envio desativado e executa a preparação no início do processo para não depender de shell ou hook de pré-deploy pago. Não usar essa configuração para pacientes reais.
 
 Auto-deploy está desativado no Blueprint: atualizações exigem uma implantação manual. Mudança para domínio próprio exige atualizar `FRONTEND_ORIGINS` com a origem HTTPS exata; não derive a origem de cabeçalhos enviados pelo visitante.
+
+## Redefinição das cinco contas de demonstração
+
+Para uma redefinição autorizada nesta instalação, ajustar somente `DEMO_ADMIN_PASSWORD`, `DEMO_PATIENT_PASSWORD` e `DEMO_STAFF_PASSWORD` no serviço Render e informar um identificador novo em `DEMO_PASSWORD_RESET_ID` (8 a 80 caracteres alfanuméricos, hífen ou sublinhado). As senhas devem ter 12 a 128 caracteres e são entregues aos avaliadores separadamente, fora do Git. Não alterar as chaves de criptografia/busca nem a conexão com o banco.
+
+Na próxima implantação, o seed exige o marcador de uma demonstração já inicializada e as cinco identidades fictícias com seus perfis originais. Uma transação troca os hashes das senhas, remove bloqueios por tentativas, revoga as sessões dessas contas e registra `DEMO_PASSWORDS_RESET`, sem gravar senhas na auditoria. Contas cadastradas posteriormente, agendamentos e dados locais são preservados. O identificador é aplicado uma única vez, inclusive sob inicialização concorrente; reiniciar com o mesmo identificador não redefine senhas novamente. Uma nova redefinição exige outro identificador explícito. Esse mecanismo é restrito ao modo de demonstração em banco separado e não cria uma rota pública de manutenção.
 
 ## HTTPS e sessão
 

@@ -7,7 +7,8 @@ const { once } = require('node:events');
 const net = require('node:net');
 const { PrismaClient } = require('../generated/prisma');
 const { ConfigService } = require('../dist/platform/config.service');
-const { seedDemo } = require('../dist/cli/seed-demo');
+const { CryptoService } = require('../dist/platform/crypto.service');
+const { seedDemo, demoAccounts } = require('../dist/cli/seed-demo');
 
 test('inicialização hospedada, seed isolado, sessão segura e reserva pela API', async t => {
   const url = new URL(process.env.TEST_DATABASE_URL || '');
@@ -38,12 +39,47 @@ test('inicialização hospedada, seed isolado, sessão segura e reserva pela API
     finally { process.env.DATA_ENCRYPTION_KEY = original; }
     assert.equal(await prisma.user.count(), 5);
   });
+  await t.test('redefinição explícita troca somente as cinco contas fictícias, revoga sessões e executa uma vez', async () => {
+    const crypto = new CryptoService(config);
+    const accounts = await prisma.user.findMany();
+    const originalHashes = new Map(accounts.map(user => [user.id, user.passwordHash]));
+    const outsiderId = randomUUID(), outsiderPassword = await crypto.hashPassword(randomBytes(24).toString('hex'));
+    await prisma.user.create({ data: { id: outsiderId, emailHash: crypto.lookup('other@example.test', 'email'), passwordHash: outsiderPassword, profileCipher: crypto.encrypt({ nome: 'Outra Conta', email: 'other@example.test' }, `user:${outsiderId}`), searchTokens: [] } });
+    try {
+      for (const user of accounts) {
+        await prisma.user.update({ where: { id: user.id }, data: { failedLogins: 5, lockedUntil: new Date(Date.now() + 900000) } });
+        await prisma.session.create({ data: { id: randomUUID(), userId: user.id, expiresAt: new Date(Date.now() + 3600000) } });
+      }
+      await prisma.session.create({ data: { id: randomUUID(), userId: outsiderId, expiresAt: new Date(Date.now() + 3600000) } });
+      for (const key of ['DEMO_ADMIN_PASSWORD', 'DEMO_PATIENT_PASSWORD', 'DEMO_STAFF_PASSWORD']) process.env[key] = randomBytes(24).toString('base64url');
+      const resetId = 'test-reset-' + randomUUID(); process.env.DEMO_PASSWORD_RESET_ID = resetId;
+      const results = await Promise.all([seedDemo(prisma, config), seedDemo(prisma, config)]);
+      assert.equal(results.filter(result => result.passwordsReset).length, 1);
+      for (const account of demoAccounts) {
+        const user = await prisma.user.findUniqueOrThrow({ where: { emailHash: crypto.lookup(account.email, 'email') } });
+        assert.notEqual(user.passwordHash, originalHashes.get(user.id));
+        assert.equal(await crypto.verifyPassword(config.secret(account.passwordKey), user.passwordHash), true);
+        assert.equal(user.failedLogins, 0); assert.equal(user.lockedUntil, null);
+        assert.equal(await prisma.session.count({ where: { userId: user.id } }), 0);
+      }
+      const resetHashes = (await prisma.user.findMany({ where: { id: { in: accounts.map(user => user.id) } }, orderBy: { id: 'asc' } })).map(user => user.passwordHash);
+      assert.equal((await seedDemo(prisma, config)).passwordsReset, false);
+      assert.deepEqual((await prisma.user.findMany({ where: { id: { in: accounts.map(user => user.id) } }, orderBy: { id: 'asc' } })).map(user => user.passwordHash), resetHashes);
+      assert.equal((await prisma.user.findUniqueOrThrow({ where: { id: outsiderId } })).passwordHash, outsiderPassword);
+      assert.equal(await prisma.session.count({ where: { userId: outsiderId } }), 1);
+      assert.equal(await prisma.auditEvent.count({ where: { action: 'DEMO_PASSWORDS_RESET', targetId: resetId } }), 1);
+      assert.equal(await prisma.scheduleSlot.count(), 21); assert.equal(await prisma.clinicalReview.count(), 0);
+    } finally { delete process.env.DEMO_PASSWORD_RESET_ID; await prisma.user.delete({ where: { id: outsiderId } }); }
+  });
   await t.test('seed recusa banco ocupado sem marcador e não deixa gravações parciais', async () => {
     const otherSchema = 'occupied_' + randomUUID().replaceAll('-', ''), otherUrl = new URL(url); otherUrl.searchParams.set('schema', otherSchema);
     execFileSync(process.execPath, ['node_modules/prisma/build/index.js', 'migrate', 'deploy'], { env: { ...process.env, DATABASE_URL: otherUrl.toString() }, stdio: 'pipe' });
     const occupied = new PrismaClient({ datasources: { db: { url: otherUrl.toString() } } });
     try {
       await occupied.healthUnit.create({ data: { name: 'Existente', address: 'Teste', sourceUrl: 'https://example.test' } });
+      process.env.DEMO_PASSWORD_RESET_ID = 'test-no-demo-marker';
+      try { await assert.rejects(seedDemo(occupied, config), /já inicializada/); }
+      finally { delete process.env.DEMO_PASSWORD_RESET_ID; }
       await assert.rejects(seedDemo(occupied, config), /banco já ocupado/);
       assert.equal(await occupied.user.count(), 0); assert.equal(await occupied.healthUnit.count(), 1);
       const bootstrapEnv = { ...process.env, DATABASE_URL: otherUrl.toString(), ADMIN_EMAIL: 'bootstrap@example.test', ADMIN_NAME: 'Admin Teste', ADMIN_PASSWORD: randomBytes(24).toString('hex') };
