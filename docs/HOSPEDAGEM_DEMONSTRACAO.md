@@ -2,7 +2,7 @@
 
 Preparação em 20/11/2026. O arquivo `render.yaml` provisiona uma demonstração separada: aplicação Docker e PostgreSQL 16, ambos no plano gratuito explícito. Não provisiona uma operação institucional. Os dados são fictícios, as notificações ficam desativadas e todas as páginas exibem o aviso de demonstração.
 
-Estado atualizado em 20/11/2026: demonstração publicada em https://saude-facil-demo-hhyy.onrender.com. A implantação `dep-dc08st6tlv9c739gpi10`, do commit `fb1716a2e91a3fa29d0b24c9da2b00c66a74960f`, atingiu o estado `live` às 14h17 (America/Cuiaba). A aplicação `saude-facil-demo-hhyy` e o PostgreSQL 16 `saude-facil-demo-db-hhyy` usam planos Free, no workspace My Workspace autorizado pelo responsável. O banco tem acesso público direto bloqueado e expira em 20/12/2026, às 14h15 (America/Cuiaba).
+Estado atualizado em 20/11/2026: demonstração publicada em https://saude-facil-demo-hhyy.onrender.com. A implantação inicial `dep-dc08st6tlv9c739gpi10`, do commit `fb1716a2e91a3fa29d0b24c9da2b00c66a74960f`, atingiu o estado `live` às 14h17 (America/Cuiaba). A aplicação `saude-facil-demo-hhyy` e o PostgreSQL 16 `saude-facil-demo-db-hhyy` usam planos Free, no workspace My Workspace autorizado pelo responsável. O banco tem acesso público direto bloqueado e expira em 20/12/2026, às 14h15 (America/Cuiaba).
 
 A consulta do repositório remoto confirmou todos os arquivos da release antes da criação do Blueprint. O CI corrigido passou em https://github.com/B-Gab-K/saude-facil/actions/runs/44791109848, incluindo compilação, testes unitários, integração, navegador, imagem Docker, inicialização com migrações e recuperação de backup em ambiente de teste. O ajuste do CI corrigiu somente as aspas do healthcheck do PostgreSQL.
 
@@ -30,6 +30,10 @@ No plano gratuito, o Render suspende a aplicação após 15 minutos sem tráfego
 Auto-deploy está desativado no Blueprint: atualizações exigem uma implantação manual. Mudança para domínio próprio exige atualizar `FRONTEND_ORIGINS` com a origem HTTPS exata; não derive a origem de cabeçalhos enviados pelo visitante.
 
 ## Redefinição das cinco contas de demonstração
+
+Em 20/11/2026, o responsável solicitou senhas padronizadas para avaliação pelo professor. A versão `2f72ebb9d2dae449258af8ba48825e533d4e9dfa` foi implantada como `dep-dc09an8n74is73a8a9j0` e ficou `live` às 14h46. Somente as três variáveis de senha e o identificador de redefinição foram alterados no Render; chaves, banco, planos e ambientes locais foram preservados. As novas senhas mantêm o mínimo de 12 caracteres e são entregues separadamente, sem registro no Git.
+
+Às 14h48, login, tela inicial autenticada, permissões de gestão e logout passaram para administrador, paciente, recepção, enfermagem e coordenação pelo URL público. O roteiro de reserva, histórico, reagendamento, cancelamento e acesso profissional também passou com as senhas novas. O [CI da versão](https://github.com/B-Gab-K/saude-facil/actions/runs/44795767219) concluiu todas as etapas com sucesso. Evidências separadas em `/tmp/saude-render-password-reset-evidence/`; testes em Chromium automatizado na mesma máquina, sem avaliação em outro dispositivo físico ou com pessoas externas.
 
 Para uma redefinição autorizada nesta instalação, ajustar somente `DEMO_ADMIN_PASSWORD`, `DEMO_PATIENT_PASSWORD` e `DEMO_STAFF_PASSWORD` no serviço Render e informar um identificador novo em `DEMO_PASSWORD_RESET_ID` (8 a 80 caracteres alfanuméricos, hífen ou sublinhado). As senhas devem ter 12 a 128 caracteres e são entregues aos avaliadores separadamente, fora do Git. Não alterar as chaves de criptografia/busca nem a conexão com o banco.
 
