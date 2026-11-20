@@ -3,11 +3,13 @@ import { Role, User } from '../../generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../platform/audit.service';
 import { serializable } from '../platform/transaction';
-import { ServiceDto, SlotDto, SlotQuery, UnitDto } from './catalog.dto';
+import { ServiceDto, SlotDto, SlotQuery, UnitDto, UnitOperationsDto } from './catalog.dto';
+import { CryptoService } from '../platform/crypto.service';
+import { Profile } from '../auth/access';
 
 @Injectable()
 export class CatalogService {
-  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService) {}
+  constructor(private readonly prisma: PrismaService, private readonly audit: AuditService, private readonly crypto: CryptoService) {}
   scope(actor: User) { return actor.role === Role.ADMIN ? {} : { id: actor.unitId || '' }; }
   units() {
     return this.prisma.healthUnit.findMany({ where: { active: true, verifiedAt: { not: null } }, select: { id: true, name: true, address: true, timezone: true, sourceUrl: true, verifiedAt: true, services: { where: { active: true, verifiedAt: { not: null } }, select: { id: true, name: true } } }, orderBy: { name: 'asc' } });
@@ -15,6 +17,21 @@ export class CatalogService {
   async drafts(actor: User) {
     const units = await this.prisma.healthUnit.findMany({ where: this.scope(actor), include: { services: true }, take: 100, orderBy: { name: 'asc' } });
     await this.audit.record(actor.id, 'CATALOG_MANAGEMENT_READ'); return units;
+  }
+  async staff(actor: User) {
+    const users = await this.prisma.user.findMany({ where: { role: { in: ['RECEPTION', 'NURSE', 'COORDINATOR'] }, disabled: false, ...(actor.role === 'ADMIN' ? {} : { unitId: actor.unitId || '' }) }, take: 200, orderBy: { createdAt: 'asc' } });
+    await this.audit.record(actor.id, 'STAFF_DIRECTORY_READ');
+    return users.map(user => ({ id: user.id, unitId: user.unitId, role: user.role, nome: this.crypto.decrypt<Profile>(user.profileCipher, `user:${user.id}`).nome }));
+  }
+  async operations(actor: User, id: string, dto: UnitOperationsDto) {
+    return serializable(this.prisma, async tx => {
+      const unit = await tx.healthUnit.findFirst({ where: { AND: [{ id }, this.scope(actor)] } });
+      if (!unit) throw new NotFoundException('Unidade não encontrada.');
+      const owner = await tx.user.findFirst({ where: { id: dto.responsibleUserId, unitId: id, role: { in: ['RECEPTION', 'NURSE', 'COORDINATOR'] }, disabled: false } });
+      if (!owner) throw new BadRequestException('Selecione uma pessoa da equipe ativa desta unidade.');
+      const updated = await tx.healthUnit.update({ where: { id }, data: dto });
+      await this.audit.record(actor.id, 'UNIT_OPERATIONS_CONFIGURED', id, dto, tx); return updated;
+    });
   }
   async createUnit(actor: User, dto: UnitDto) {
     return this.prisma.$transaction(async tx => {

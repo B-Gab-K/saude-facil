@@ -13,11 +13,13 @@
 
 ## Segredos
 
-`DATA_ENCRYPTION_KEY` e `LOOKUP_HMAC_KEY`: duas chaves diferentes, aleatórias, de 32 bytes em hexadecimal. `.env` e artefatos gerados são ignorados pelo Git. Nunca imprimir chaves ou senhas nos logs. A aplicação rejeita configuração ausente/inválida e HTTP em produção.
+`DATA_ENCRYPTION_KEY` e `LOOKUP_HMAC_KEY`: duas chaves diferentes, aleatórias, de 32 bytes em hexadecimal ou base64 canônico. `.env` e artefatos gerados são ignorados pelo Git. Nunca imprimir chaves ou senhas nos logs. A aplicação rejeita configuração ausente/inválida e origens HTTP em produção.
+
+TLS direto permanece o padrão. `TLS_TERMINATION=proxy` permite HTTP apenas no trecho interno isolado de uma hospedagem que fornece HTTPS público; essa escolha deve ser explícita. Os cookies de produção mantêm `Secure`, `HttpOnly`, `SameSite=Strict` e prefixo `__Host-` mesmo sem certificado dentro do processo. Não há confiança genérica em cabeçalhos encaminhados pelo visitante. Veja [hospedagem da demonstração](HOSPEDAGEM_DEMONSTRACAO.md).
 
 Não trocar essas chaves diretamente em uma instalação com dados. A perda da chave de criptografia impede recuperar os dados. A troca da chave de busca exige recalcular índices. A rotação deve ser uma migração controlada com guarda e revisão da instituição; não foi implementada uma rotação automática.
 
-O bootstrap cria apenas o primeiro administrador e se recusa a alterar contas existentes. Não há senha padrão. Administrador cria contas individuais de recepção, enfermagem e coordenação depois de conferir vínculo e qualificação. Conferência de identidade é presencial; não existe confirmação automática de e-mail nesta etapa. Recuperação de conta e uma política de autenticação forte com MFA precisam de definição institucional antes de exposição ampla.
+O bootstrap cria apenas o primeiro administrador e se recusa a alterar contas existentes. Não há senha padrão. Administrador cria contas individuais de recepção, enfermagem e coordenação depois de conferir vínculo e qualificação. Conferência de identidade é presencial; a confirmação do e-mail, com token de uso único e expiração, é exigida antes de enviar avisos consentidos. Recuperação de conta e uma política de autenticação forte com MFA precisam de definição institucional antes de exposição ampla.
 
 ## Retenção
 
@@ -29,4 +31,4 @@ O escopo atual da rotina é **texto suplementar dos agendamentos**, não toda a 
 
 ## Limites que exigem decisão externa
 
-Os controles acima não constituem certificação jurídica ou de segurança. A instituição ainda precisa definir responsável pelos dados, fundamento e finalidade do tratamento, aviso de privacidade, atendimento aos titulares e prazos de cada categoria. Não há integração oficial com SUS, revisão clínica efetivamente realizada ou cadastro de unidades validado por nós. Não foi feito deploy; infraestrutura, backup/restauração e notificações foram adiados pelo usuário.
+Os controles acima não constituem certificação jurídica ou de segurança. A instituição ainda precisa definir responsável pelos dados, fundamento e finalidade do tratamento, aviso de privacidade, atendimento aos titulares e prazos de cada categoria. Não há integração oficial com SUS, revisão clínica efetivamente realizada ou cadastro de unidades validado por nós. Infraestrutura, backup/restauração e avisos por e-mail estão implementados; a ativação externa depende de acessos, destino de backup e provedor aprovados. Veja [operação e deploy](OPERACAO_E_DEPLOY.md).

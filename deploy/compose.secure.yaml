@@ -1,0 +1,11 @@
+services:
+  app:
+    environment:
+      NODE_ENV: production
+      TLS_CERT_PATH: /run/secrets/tls_cert
+      TLS_KEY_PATH: /run/secrets/tls_key
+    secrets: [tls_cert, tls_key, smtp_password]
+secrets:
+  tls_cert: {file: '${SECRETS_DIR:?}/tls_cert'}
+  tls_key: {file: '${SECRETS_DIR:?}/tls_key'}
+  smtp_password: {file: '${SECRETS_DIR:?}/smtp_password'}

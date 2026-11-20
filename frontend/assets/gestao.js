@@ -27,11 +27,17 @@
     } catch (error) { sf.error($('erro'), error); } return;
   }
   async function load() {
-    const units = await sf.request('/catalog/management'); $('lista').replaceChildren(); $('unitId').replaceChildren(new Option('Selecione a unidade', '')); $('serviceId').replaceChildren(new Option('Selecione o serviço', '')); $('staffUnit').replaceChildren(new Option('Selecione a unidade', ''));
+    const [units, staff] = await Promise.all([sf.request('/catalog/management'), sf.request('/catalog/staff')]); $('lista').replaceChildren(); $('unitId').replaceChildren(new Option('Selecione a unidade', '')); $('serviceId').replaceChildren(new Option('Selecione o serviço', '')); $('staffUnit').replaceChildren(new Option('Selecione a unidade', ''));
     units.forEach(unit => {
       $('unitId').add(new Option(unit.name, unit.id)); $('staffUnit').add(new Option(unit.name, unit.id));
       const card = sf.make('article', null, 'appointment'); card.append(sf.make('h2', unit.name), sf.make('p', unit.address), sf.make('p', unit.active ? 'Unidade validada' : 'Aguardando validação institucional', 'small'));
       if (!unit.active) approval(card, 'units', unit.id);
+      const operation = sf.make('form', null, 'form-stack section'), ownerLabel = sf.make('label', 'Responsável pela revisão administrativa'), owner = sf.make('select'), deadlineLabel = sf.make('label', 'Prazo da primeira revisão, em minutos corridos'), deadline = sf.make('input');
+      owner.id = 'owner-' + unit.id; ownerLabel.htmlFor = owner.id; owner.required = true; owner.add(new Option('Selecione a pessoa responsável', ''));
+      staff.filter(person => person.unitId === unit.id).forEach(person => owner.add(new Option(person.nome, person.id))); owner.value = unit.responsibleUserId || '';
+      deadline.id = 'deadline-' + unit.id; deadlineLabel.htmlFor = deadline.id; deadline.type = 'number'; deadline.min = '15'; deadline.max = '10080'; deadline.required = true; deadline.value = unit.responseMinutes || '';
+      operation.append(ownerLabel, owner, deadlineLabel, deadline, sf.make('p', 'Prazo administrativo para novas reservas. Não altera a confirmação nem o horário do atendimento. Defina conforme a escala da unidade.', 'help'), sf.make('button', 'Salvar responsável e prazo', 'btn btn-subtle')); card.append(operation);
+      operation.addEventListener('submit', async event => { event.preventDefault(); await sf.busy(operation, async () => { try { await sf.request(`/catalog/units/${unit.id}/operations`, { method: 'POST', body: { responsibleUserId: owner.value, responseMinutes: Number(deadline.value) } }); await load(); $('erro').textContent = 'Responsável e prazo salvos.'; } catch (error) { sf.error($('erro'), error); } }); });
       unit.services.forEach(service => {
         const box = sf.make('div'); box.append(sf.make('h3', service.name), sf.make('p', service.active ? 'Serviço validado' : 'Oferta pendente de validação', 'small'));
         if (!service.active) approval(box, 'services', service.id);

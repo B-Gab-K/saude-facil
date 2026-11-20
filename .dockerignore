@@ -1,0 +1,14 @@
+.git
+**/node_modules
+backend/generated
+backend/dist
+backend/test
+backend/test-results
+backend/playwright-report
+**/.env
+deploy/config/*.env
+deploy/secrets
+backups
+*.sfb
+*.partial-*
+**/*Zone.Identifier

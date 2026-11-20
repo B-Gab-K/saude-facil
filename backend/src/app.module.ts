@@ -7,6 +7,7 @@ import { GuidanceController } from './guidance/guidance.controller';
 import { GuidanceService } from './guidance/guidance.service';
 import { OperationsController } from './operations/operations.controller';
 import { OperationsService } from './operations/operations.service';
+import { NotificationsModule } from './notifications/notifications.module';
 
-@Module({ imports: [PlatformModule, AuthModule, CatalogModule, AppointmentsModule], controllers: [GuidanceController, OperationsController], providers: [GuidanceService, OperationsService] })
+@Module({ imports: [PlatformModule, AuthModule, NotificationsModule, CatalogModule, AppointmentsModule], controllers: [GuidanceController, OperationsController], providers: [GuidanceService, OperationsService] })
 export class AppModule {}

@@ -37,4 +37,4 @@ Para futura triagem clínica real, falta definir e aprovar o protocolo, responsa
 - Procedimento presencial de identidade e política de proteção/retenção de dados aprovados.
 - Avaliação jurídica e de segurança pelos responsáveis.
 
-Testes de usabilidade/acessibilidade e infraestrutura de produção seguem adiados conforme solicitado; não foram declarados concluídos.
+Em 20/11/2026, a infraestrutura e os testes técnicos de interface passaram a ser implementados. Testes com usuários externos, leitor de tela real e ativação da produção permanecem dependentes de participantes, responsáveis e acessos. Veja [operação](OPERACAO_E_DEPLOY.md) e [roteiro de avaliação](TESTES_DE_USABILIDADE.md); não foram declarados concluídos por automação.

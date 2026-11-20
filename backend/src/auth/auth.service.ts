@@ -6,7 +6,7 @@ import { CryptoService } from '../platform/crypto.service';
 import { ConfigService } from '../platform/config.service';
 import { AuditService } from '../platform/audit.service';
 import { serializable } from '../platform/transaction';
-import { LoginDto, PasswordDto, RegisterDto, StaffDto } from './auth.dto';
+import { IdentityDto, LoginDto, PasswordDto, RegisterDto, StaffDto } from './auth.dto';
 import { CookieResponse, Profile } from './access';
 
 @Injectable()
@@ -17,16 +17,18 @@ export class AuthService {
   }
   emailHash(email: string) { return this.crypto.lookup(email.trim().toLowerCase(), 'email'); }
   profile(user: User) { return this.crypto.decrypt<Profile>(user.profileCipher, `user:${user.id}`); }
-  view(user: User) { return { id: user.id, role: user.role, unitId: user.unitId, verified: !!user.verifiedAt, nome: this.profile(user).nome }; }
+  view(user: User) { return { id: user.id, role: user.role, unitId: user.unitId, verified: !!user.verifiedAt, identityComplete: !!user.identityHash && !!user.unitId, nome: this.profile(user).nome }; }
 
   async register(dto: RegisterDto) {
-    if (!this.validCpf(dto.cpf) || dto.nasc > new Date().toISOString().slice(0, 10)) throw new BadRequestException('CPF ou nascimento inválido.');
-    const unit = await this.prisma.healthUnit.findFirst({ where: { id: dto.unitId, active: true, verifiedAt: { not: null } } });
-    if (!unit) throw new BadRequestException('Selecione uma unidade validada.');
+    const hasIdentity = dto.cpf !== undefined || dto.nasc !== undefined || dto.unitId !== undefined;
+    if (hasIdentity) {
+      if (!dto.cpf || !dto.nasc || !dto.unitId) throw new BadRequestException('Preencha CPF, nascimento e unidade juntos na etapa de identificação.');
+      await this.validateIdentity({ cpf: dto.cpf, nasc: dto.nasc, unitId: dto.unitId });
+    }
     const id = randomUUID(), passwordHash = await this.crypto.hashPassword(dto.password);
     try {
       return await serializable(this.prisma, async tx => {
-        const user = await tx.user.create({ data: { id, emailHash: this.emailHash(dto.email), identityHash: this.crypto.lookup(dto.cpf, 'cpf'), passwordHash, unitId: unit.id, searchTokens: this.crypto.nameTokens(dto.nome),
+        const user = await tx.user.create({ data: { id, emailHash: this.emailHash(dto.email), identityHash: dto.cpf ? this.crypto.lookup(dto.cpf, 'cpf') : null, passwordHash, unitId: dto.unitId, searchTokens: this.crypto.nameTokens(dto.nome),
           profileCipher: this.crypto.encrypt({ nome: dto.nome.trim(), email: dto.email.trim().toLowerCase(), cpf: dto.cpf, nasc: dto.nasc }, `user:${id}`) } });
         await this.audit.record(id, 'ACCOUNT_REGISTERED', id, {}, tx);
         return this.view(user);
@@ -101,7 +103,7 @@ export class AuthService {
   }
 
   async pending(actor: User) {
-    const users = await this.prisma.user.findMany({ where: { role: Role.PATIENT, verifiedAt: null, disabled: false, ...(actor.role === Role.ADMIN ? {} : { unitId: actor.unitId }) }, take: 50, orderBy: { createdAt: 'asc' } });
+    const users = await this.prisma.user.findMany({ where: { role: Role.PATIENT, identityHash: { not: null }, unitId: { not: null }, verifiedAt: null, disabled: false, ...(actor.role === Role.ADMIN ? {} : { unitId: actor.unitId }) }, take: 50, orderBy: { createdAt: 'asc' } });
     await this.audit.record(actor.id, 'IDENTITIES_READ', undefined, { ids: users.map(u => u.id) });
     return users.map(user => ({ ...this.view(user), ...this.profile(user) }));
   }
@@ -109,7 +111,7 @@ export class AuthService {
   async verify(actor: User, id: string, evidence: string) {
     return serializable(this.prisma, async tx => {
       const user = await tx.user.findFirst({ where: { id, role: Role.PATIENT, ...(actor.role === Role.ADMIN ? {} : { unitId: actor.unitId }) } });
-      if (!user || user.disabled) throw new BadRequestException('Conta não disponível nesta unidade.');
+      if (!user || user.disabled || !user.identityHash || !user.unitId) throw new BadRequestException('Conta não disponível ou identificação incompleta nesta unidade.');
       const updated = await tx.user.update({ where: { id }, data: { verifiedAt: new Date() } });
       await this.audit.record(actor.id, 'IDENTITY_VERIFIED', id, { evidence }, tx);
       return this.view(updated);
@@ -127,7 +129,21 @@ export class AuthService {
   }
 
   private cookie(response: CookieResponse, token: string, seconds = this.config.sessionHours * 3600) {
-    response.setHeader('Set-Cookie', `${this.config.cookieName}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${seconds}${this.config.httpsOptions ? '; Secure' : ''}`);
+    response.setHeader('Set-Cookie', `${this.config.cookieName}=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=${seconds}${this.config.secureCookies ? '; Secure' : ''}`);
+  }
+  async identity(actor: User, dto: IdentityDto) {
+    if (actor.role !== Role.PATIENT) throw new ForbiddenException('Etapa exclusiva de pacientes.');
+    await this.validateIdentity(dto);
+    return serializable(this.prisma, async tx => {
+      const current = await tx.user.findUniqueOrThrow({ where: { id: actor.id } });
+      if (current.verifiedAt) throw new ConflictException('Para corrigir uma identidade já conferida, procure a unidade.');
+      const updated = await tx.user.update({ where: { id: actor.id }, data: { identityHash: this.crypto.lookup(dto.cpf, 'cpf'), unitId: dto.unitId, profileCipher: this.crypto.encrypt({ ...this.profile(current), cpf: dto.cpf, nasc: dto.nasc }, `user:${actor.id}`) } });
+      await this.audit.record(actor.id, 'IDENTITY_SUBMITTED', actor.id, {}, tx); return this.view(updated);
+    });
+  }
+  private async validateIdentity(dto: IdentityDto) {
+    if (!this.validCpf(dto.cpf) || dto.nasc > new Date().toISOString().slice(0, 10)) throw new BadRequestException('Confira o CPF e a data de nascimento.');
+    if (!await this.prisma.healthUnit.findFirst({ where: { id: dto.unitId, active: true, verifiedAt: { not: null } } })) throw new BadRequestException('Selecione uma unidade disponível.');
   }
   private validCpf(value: string) {
     if (/^(\d)\1{10}$/.test(value)) return false;

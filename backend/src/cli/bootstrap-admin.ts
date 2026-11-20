@@ -11,7 +11,7 @@ async function main() {
   try {
     await prisma.$transaction(async tx => {
       // First administrator only. Additional administrative access requires a reviewed procedure.
-      await tx.$queryRaw`SELECT pg_advisory_xact_lock(58291001)`;
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(58291001)`;
       if (await tx.user.count({ where: { role: 'ADMIN' } })) throw new Error('Já existe um administrador. O bootstrap não altera contas existentes.');
       const id = randomUUID();
       await tx.user.create({ data: { id, emailHash: crypto.lookup(email, 'email'), profileCipher: crypto.encrypt({ nome, email }, `user:${id}`), searchTokens: crypto.nameTokens(nome), passwordHash: await crypto.hashPassword(password), role: 'ADMIN', verifiedAt: new Date() } });

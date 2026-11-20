@@ -9,7 +9,15 @@ import { AppointmentQuery } from '../appointments/dto/appointment.dto';
 export class OperationsService {
   constructor(private readonly prisma: PrismaService, private readonly audit: AuditService, private readonly http: HttpSecurity, private readonly crypto: CryptoService) {}
   async health() { await this.prisma.$queryRaw`SELECT 1`; return { status: 'ok' }; }
-  async metrics(actor: User) { await this.audit.record(actor.id, 'METRICS_READ'); return { ...this.http.metrics, uptimeSeconds: Math.floor(process.uptime()) }; }
+  async metrics(actor: User) {
+    const [pendingNotifications, failedNotifications, overdueReviews, unassignedReviews] = await Promise.all([
+      this.prisma.notification.count({ where: { status: { in: ['PENDING', 'PROCESSING'] } } }),
+      this.prisma.notification.count({ where: { status: 'FAILED' } }),
+      this.prisma.booking.count({ where: { firstReviewedAt: null, responseDueAt: { lt: new Date() }, status: { notIn: ['COMPLETED', 'CANCELLED'] } } }),
+      this.prisma.booking.count({ where: { assignedToId: null, firstReviewedAt: null, status: { notIn: ['COMPLETED', 'CANCELLED'] } } }),
+    ]);
+    await this.audit.record(actor.id, 'METRICS_READ'); return { ...this.http.metrics, pendingNotifications, failedNotifications, overdueReviews, unassignedReviews, uptimeSeconds: Math.floor(process.uptime()) };
+  }
   async auditEvents(actor: User, query: AppointmentQuery) {
     const [items, total] = await this.prisma.$transaction([this.prisma.auditEvent.findMany({ orderBy: [{ createdAt: 'desc' }, { id: 'asc' }], take: query.limit, skip: (query.page - 1) * query.limit, select: { id: true, action: true, actorId: true, targetId: true, createdAt: true } }), this.prisma.auditEvent.count()]);
     await this.audit.record(actor.id, 'AUDIT_READ'); return { items, total, page: query.page, limit: query.limit };

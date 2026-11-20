@@ -21,3 +21,28 @@ Teste com contas e agenda fictícias em schema temporário, servidos pela própr
 5. Abertura da gestão com unidade, serviço e formulários de horários/equipe carregados.
 
 Não foram realizados teste de usabilidade com pacientes, auditoria formal de acessibilidade, verificação de áudio/microfone, precisão de geocodificação, testes de carga ou pentest independente. A verificação técnica não constitui aprovação clínica, jurídica ou institucional. Ambientes de produção, deploy, backup e notificações continuam fora desta etapa.
+
+## Atualização de 20/11/2026 — experiência e operação
+
+- Cadastro progressivo: nome/e-mail/senha primeiro, identificação separada antes da conferência presencial.
+- Cinco testes unitários e quatorze cenários de integração com PostgreSQL aprovados, incluindo nova etapa de identificação, responsável/prazo, SMTP local, consentimento, confirmação de endereço, deduplicação e revogação.
+- Quatro testes Playwright aprovados: cadastro progressivo; reserva/reagendamento/cancelamento; falha de rede com campos preservados; teclado, axe e reflow em 320/1280 px. A avaliação automática cobriu dez telas públicas e autenticadas. Não houve violações detectadas pelas regras WCAG 2/2.1 A/AA usadas pelo axe nesses estados.
+- Build da imagem de aplicação concluído. Desenvolvimento e homologação local iniciados com redes, volumes, chaves e bancos separados. Migrações e saúde verificadas; homologação testada em HTTPS com certificado autoassinado de teste e validação pelo cliente, sem publicação externa.
+- Backup do ambiente de desenvolvimento cifrado em AES-256-GCM e com manifesto de integridade criado. Um teste de recuperação em PostgreSQL restaurou dados pessoais cifrados, validou a leitura com a chave original e rejeitou backup adulterado, chave incorreta e banco ocupado sem gravar no destino vazio.
+- CI e deploy manual com imagem imutável preparados em arquivos locais. Workflow remoto, agendamento de backups no servidor, cópia externa e SMTP real não foram ativados sem acessos/destinos aprovados.
+- `npm audit --omit=dev` não reportou vulnerabilidades conhecidas nas dependências de execução na verificação desta etapa.
+
+Faltam participantes/facilitador para o [teste de usabilidade e tecnologia assistiva real](TESTES_DE_USABILIDADE.md). O [procedimento operacional](OPERACAO_E_DEPLOY.md) identifica os acessos e decisões ainda necessários. Nenhum resultado de usuários reais foi atribuído aos testes automatizados.
+
+## Atualização de 20/11/2026 — hospedagem de demonstração
+
+- Preparado `render.yaml` com aplicação Docker e PostgreSQL 16 em planos explicitamente gratuitos, banco sem acesso público direto, segredos gerados pela plataforma e inicialização com migrações. O YAML passou pela validação do JSON Schema oficial do Render. Não foi criada conta nem serviço no Render, e a versão local não foi enviada ao GitHub nesta etapa.
+- Adicionado modo explícito de HTTPS no proxy, preservando cookie `__Host-`, Secure, HttpOnly, SameSite=Strict e origens HTTPS. TLS direto permanece o padrão. Corrigida a leitura da trava transacional no bootstrap administrativo e validada a criação única do primeiro administrador.
+- Nove testes unitários aprovados; quatorze cenários anteriores de integração e quatro cenários de hospedagem aprovados com PostgreSQL real em schemas descartáveis. Os testes incluem seed concorrente/idempotente, recusa de banco ocupado, recusa de chaves trocadas, inicialização hospedada, sessão segura, reserva e autorização. O container exclusivo de testes foi removido ao concluir.
+- Quatro testes Playwright aprovados, usando bibliotecas de navegador temporárias já existentes. Nenhum pacote do sistema foi instalado. Cobertura anterior de teclado, axe, reflow e fluxos de paciente/profissional preservada.
+- Criado o projeto Compose separado `saude-facil-demo`, com banco, volume, chaves e cinco contas fictícias. Os ambientes existentes não foram recriados. As senhas ficam fora do Git em `deploy/secrets/demo/ACESSOS.txt`. Nenhuma revisão clínica institucional foi registrada automaticamente.
+- Aberto Quick Tunnel Cloudflare somente para essa demonstração: https://dates-paragraphs-systematic-cfr.trycloudflare.com. A imagem oficial foi identificada por digest. O endereço é temporário e depende de computador, internet e container de túnel ativos; não representa hospedagem permanente.
+- Às 11h45 de 20/11/2026 (America/Cuiaba), verificação automatizada pelo endereço HTTPS público concluiu acesso à página inicial, aviso de dados fictícios, login do paciente, cookie seguro, reserva, reagendamento, cancelamento, login da recepção e bloqueio de acesso à gestão. A página inicial de demonstração passou pelas regras axe aplicadas e reflow em viewport de 390 px. A navegação foi executada na mesma máquina; não houve avaliação com pessoa externa ou dispositivo físico adicional.
+- Evidências locais em `backend/test-results/demo-publica.json`, `demo-publica-inicio.png` e `demo-publica-confirmacao.png`. O roteiro reproduzível está em `backend/test/support/public-demo-check.cjs`. O leitor web externo desta sessão não conseguiu abrir o endereço; a verificação concluída foi a do Chromium pelo URL público, não uma confirmação independente em outra rede.
+
+A hospedagem permanente continua dependendo de acesso autorizado à conta e da disponibilização da versão atual no repositório remoto. Consulte [hospedagem da demonstração](HOSPEDAGEM_DEMONSTRACAO.md).

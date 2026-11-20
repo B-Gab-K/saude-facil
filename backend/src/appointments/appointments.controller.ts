@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query, Req } 
 import { Role } from '../../generated/prisma';
 import { AuthRequest, Roles } from '../auth/access';
 import { AppointmentsService } from './appointments.service';
-import { AppointmentQuery, CreateAppointmentDto, RescheduleDto, UpdateAppointmentDto } from './dto/appointment.dto';
+import { AppointmentQuery, AssignmentDto, CreateAppointmentDto, RescheduleDto, UpdateAppointmentDto } from './dto/appointment.dto';
 @Controller('api/solicitacoes')
 export class AppointmentsController {
   constructor(private readonly appointments: AppointmentsService) {}
@@ -11,4 +11,5 @@ export class AppointmentsController {
   @Roles(Role.PATIENT) @Post() create(@Req() req: AuthRequest, @Body() dto: CreateAppointmentDto) { return this.appointments.create(req.actor, dto); }
   @Patch(':id') update(@Req() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() dto: UpdateAppointmentDto) { return this.appointments.update(req.actor, id, dto); }
   @Post(':id/reschedule') reschedule(@Req() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() dto: RescheduleDto) { return this.appointments.reschedule(req.actor, id, dto); }
+  @Roles(Role.ADMIN, Role.COORDINATOR, Role.RECEPTION) @Post(':id/assignment') assign(@Req() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string, @Body() dto: AssignmentDto) { return this.appointments.assign(req.actor, id, dto.assigneeId, dto.version); }
 }

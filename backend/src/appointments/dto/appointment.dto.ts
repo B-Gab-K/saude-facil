@@ -14,6 +14,10 @@ export class RescheduleDto {
   @IsInt() @Min(1) version!: number;
   @IsUUID() slotId!: string;
 }
+export class AssignmentDto {
+  @IsUUID() assigneeId!: string;
+  @IsInt() @Min(1) version!: number;
+}
 export class AppointmentQuery {
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(10000) page = 1;
   @IsOptional() @Type(() => Number) @IsInt() @Min(1) @Max(100) limit = 20;

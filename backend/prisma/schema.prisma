@@ -57,8 +57,15 @@ model User {
   failedLogins      Int       @default(0)
   lockedUntil       DateTime?
   createdAt         DateTime  @default(now())
+  emailVerifiedAt   DateTime?
+  emailConsentAt    DateTime?
+  lastEmailVerificationAt DateTime?
+  consentVersion    String?
+  notifications     Notification[]
+  emailVerifications EmailVerification[]
   sessions          Session[]
   bookings          Booking[]
+  @@index([searchTokens], type: Gin)
 }
 
 model Session {
@@ -79,6 +86,8 @@ model HealthUnit {
   verifiedAt  DateTime?
   verifiedBy  String?
   active      Boolean   @default(false)
+  responsibleUserId String?
+  responseMinutes Int?
   users       User[]
   services    CareService[]
 }
@@ -123,6 +132,9 @@ model Booking {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   sensitivePurgedAt DateTime?
+  assignedToId   String?
+  responseDueAt  DateTime?
+  firstReviewedAt DateTime?
   @@index([patientId, createdAt])
   @@index([status, createdAt])
 }
@@ -154,4 +166,29 @@ model RateBucket {
   count      Int      @default(1)
   expiresAt  DateTime
   @@index([expiresAt])
+}
+
+model EmailVerification {
+  tokenHash String @id
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind String
+  dedupeKey String @unique
+  payloadCipher String
+  status String @default("PENDING")
+  attempts Int @default(0)
+  availableAt DateTime @default(now())
+  leaseUntil DateTime?
+  leaseToken String?
+  sentAt DateTime?
+  createdAt DateTime @default(now())
+  @@index([status, availableAt])
 }

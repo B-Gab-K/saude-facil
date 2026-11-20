@@ -13,5 +13,6 @@ export class ExpirationService implements OnModuleInit, OnModuleDestroy {
   private async cleanup() {
     await this.prisma.session.deleteMany({ where: { OR: [{ expiresAt: { lt: new Date() } }, { lastSeen: { lt: new Date(Date.now() - this.config.idleMinutes * 60_000) } }] } });
     await this.prisma.rateBucket.deleteMany({ where: { expiresAt: { lt: new Date() } } });
+    await this.prisma.emailVerification.deleteMany({ where: { expiresAt: { lt: new Date() } } });
   }
 }

@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Configure POSTGRES_DB}
+      POSTGRES_USER: saude
+      POSTGRES_PASSWORD_FILE: /run/secrets/database_password
+    secrets: [database_password]
+    volumes: [database:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U saude -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [data]
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+  migrate:
+    image: ${APP_IMAGE:-saude-facil:local}
+    user: '${APP_UID:-1000}:${APP_GID:-1000}'
+    env_file: ${CONFIG_FILE:?Configure CONFIG_FILE}
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+    secrets: [database_url]
+    command: [node, node_modules/prisma/build/index.js, migrate, deploy]
+    depends_on:
+      db: {condition: service_healthy}
+    networks: [data]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+  app:
+    image: ${APP_IMAGE:-saude-facil:local}
+    user: '${APP_UID:-1000}:${APP_GID:-1000}'
+    restart: unless-stopped
+    init: true
+    env_file: ${CONFIG_FILE:?Configure CONFIG_FILE}
+    environment:
+      DATABASE_URL_FILE: /run/secrets/database_url
+      DATA_ENCRYPTION_KEY_FILE: /run/secrets/data_key
+      LOOKUP_HMAC_KEY_FILE: /run/secrets/lookup_key
+      HOST: 0.0.0.0
+    secrets: [database_url, data_key, lookup_key]
+    ports: ['${BIND_ADDRESS:-127.0.0.1}:${APP_PORT:-3001}:3001']
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    networks: [data, external]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    pids_limit: 128
+    logging:
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+networks:
+  data: {internal: true}
+  external: {}
+volumes:
+  database: {}
+secrets:
+  database_password: {file: '${SECRETS_DIR:?Configure SECRETS_DIR}/database_password'}
+  database_url: {file: '${SECRETS_DIR:?Configure SECRETS_DIR}/database_url'}
+  data_key: {file: '${SECRETS_DIR:?Configure SECRETS_DIR}/data_key'}
+  lookup_key: {file: '${SECRETS_DIR:?Configure SECRETS_DIR}/lookup_key'}

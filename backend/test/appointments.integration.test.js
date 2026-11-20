@@ -10,6 +10,11 @@ const { CryptoService } = require('../dist/platform/crypto.service');
 const { ConfigService } = require('../dist/platform/config.service');
 const { AuditService } = require('../dist/platform/audit.service');
 const { OperationsService } = require('../dist/operations/operations.service');
+const { NotificationsService } = require('../dist/notifications/notifications.service');
+const { NotificationsWorker } = require('../dist/notifications/notifications.worker');
+const { NotificationOutbox } = require('../dist/notifications/notification-outbox');
+const { SmtpNotificationTransport } = require('../dist/notifications/notification.transport');
+const { SMTPServer } = require('smtp-server');
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 if (!databaseUrl || !new URL(databaseUrl).pathname.endsWith('_test')) throw new Error('TEST_DATABASE_URL deve apontar para um banco exclusivo cujo nome termine em _test.');
@@ -212,6 +217,63 @@ test('segurança, catálogo e reserva transacional com PostgreSQL real', async t
     assert.equal((await a.call('GET', '/auth/me')).status, 401);
     assert.equal(await prisma.session.count({ where: { userId: patientA.id } }), 0);
     assert.notEqual((await prisma.user.findUniqueOrThrow({ where: { id: patientA.id } })).passwordHash, hash);
+  });
+  await t.test('cadastro progressivo, identificação e responsabilidade com prazo administrativo', async () => {
+    const newcomer = client(), created = await newcomer.json('POST', '/auth/register', { nome: 'Pessoa Cadastro Progressivo', email: 'new@example.test', password });
+    assert.equal(created.identityComplete, false); assert.equal(created.unitId, null); await newcomer.login('new@example.test');
+    assert.equal((await newcomer.call('POST', `/users/${created.id}/verify`, { evidence: 'Tentativa sem perfil' })).status, 403);
+    const identified = await newcomer.json('POST', '/auth/identity', { cpf: cpf('103'), nasc: '1990-01-01', unitId: unit.id }); assert.equal(identified.identityComplete, true);
+    await reception.json('POST', `/users/${created.id}/verify`, { evidence: 'Conferência de teste após cadastro' });
+    const directory = await admin.json('GET', '/catalog/staff', undefined, 200), person = directory.find(person => person.role === 'RECEPTION');
+    await admin.json('POST', `/catalog/units/${unit.id}/operations`, { responsibleUserId: person.id, responseMinutes: 60 });
+    const target = await slot(20), item = await newcomer.json('POST', '/solicitacoes', { slotId: target.id });
+    assert.ok(item.responseDueAt); assert.equal((await prisma.booking.findUniqueOrThrow({ where: { id: item.id } })).assignedToId, person.id);
+    assert.equal((await newcomer.call('POST', `/solicitacoes/${item.id}/assignment`, { assigneeId: person.id, version: item.version })).status, 403);
+    const reviewed = await reception.json('POST', `/solicitacoes/${item.id}/assignment`, { assigneeId: person.id, version: item.version }); assert.ok(reviewed.firstReviewedAt);
+    assert.equal((await newcomer.call('POST', '/notifications/consent', { enabled: true })).status, 503);
+  });
+  await t.test('SMTP local, consentimento, verificação, outbox transacional e revogação', async () => {
+    const messages = [], smtp = new SMTPServer({ authOptional: true, disabledCommands: ['AUTH', 'STARTTLS'], onData(stream, session, callback) { let message = ''; stream.on('data', chunk => { message += chunk; }); stream.on('end', () => { messages.push(message); callback(); }); } });
+    await new Promise(resolve => smtp.listen(0, '127.0.0.1', resolve)); const smtpPort = smtp.server.address().port;
+    const previous = Object.fromEntries(['NOTIFICATION_MODE', 'SMTP_HOST', 'SMTP_FROM', 'SMTP_PORT'].map(key => [key, process.env[key]]));
+    Object.assign(process.env, { NOTIFICATION_MODE: 'capture', SMTP_HOST: '127.0.0.1', SMTP_FROM: 'local@example.test', SMTP_PORT: String(smtpPort) });
+    const transport = new SmtpNotificationTransport(new ConfigService()), audit = new AuditService(prisma, crypto), notifications = new NotificationsService(prisma, crypto, audit, transport), worker = new NotificationsWorker(prisma, crypto, audit, transport), outbox = new NotificationOutbox(crypto);
+    try {
+      const id = randomUUID(); let user = await prisma.user.create({ data: { id, emailHash: crypto.lookup('mail@example.test', 'email'), profileCipher: crypto.encrypt({ nome: 'Teste Local', email: 'mail@example.test' }, `user:${id}`), passwordHash: await crypto.hashPassword(password), searchTokens: [] } });
+      await prisma.$transaction(tx => outbox.booking(tx, id, 'never-sent', 1)); assert.equal(await prisma.notification.count({ where: { userId: id } }), 0);
+      await notifications.consent(user, true);
+      await assert.rejects(notifications.consent(user, true));
+      await notifications.consent(user, false); await assert.rejects(notifications.consent(user, true));
+      await prisma.user.update({ where: { id }, data: { lastEmailVerificationAt: new Date(Date.now() - 61000) } });
+      await notifications.consent(user, true);
+      const pending = await prisma.notification.findFirstOrThrow({ where: { userId: id, status: 'PENDING' } }), code = crypto.decrypt(pending.payloadCipher, 'notification').token;
+      await worker.tick(); assert.equal(messages.length, 1);
+      const body = messages[0].split(/\r?\n\r?\n/).slice(1).join('\n');
+      const decoded = /Content-Transfer-Encoding: base64/i.test(messages[0]) ? Buffer.from(body.replace(/\s/g, ''), 'base64').toString('utf8') : body.replace(/=\r?\n/g, '').replace(/=([A-F\d]{2})/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+      assert.ok(decoded.includes(code));
+      await notifications.verify(user, code); await assert.rejects(notifications.verify(user, code));
+      user = await prisma.user.findUniqueOrThrow({ where: { id } });
+      await prisma.$transaction(async tx => { await outbox.booking(tx, id, 'test-booking', 1); await outbox.booking(tx, id, 'test-booking', 1); });
+      assert.equal(await prisma.notification.count({ where: { userId: id, kind: 'BOOKING_UPDATED' } }), 1);
+      await worker.tick(); assert.equal(messages.length, 2); assert.ok(!messages[1].includes('Motivo sensível')); assert.ok(!messages[1].includes('Teste Local'));
+      await prisma.$transaction(tx => outbox.booking(tx, id, 'test-booking', 2)); await notifications.consent(user, false); await worker.tick(); assert.equal(messages.length, 2);
+      assert.equal(await prisma.notification.count({ where: { userId: id, status: 'CANCELLED' } }), 2);
+      await notifications.consent(user, true);
+      await assert.rejects(prisma.$transaction(async tx => { await outbox.booking(tx, id, 'rollback', 1); throw new Error('rollback'); }));
+      assert.equal(await prisma.notification.count({ where: { dedupeKey: 'rollback:1:email' } }), 0);
+      await prisma.$transaction(tx => outbox.booking(tx, id, 'retry', 1));
+      const failedWorker = new NotificationsWorker(prisma, crypto, audit, { enabled: true, send: async () => { throw new Error('SMTP indisponível'); } });
+      await failedWorker.tick(); const retry = await prisma.notification.findUniqueOrThrow({ where: { dedupeKey: 'retry:1:email' } });
+      assert.equal(retry.attempts, 1); assert.equal(retry.status, 'PENDING'); assert.ok(retry.availableAt > new Date());
+      await prisma.notification.update({ where: { id: retry.id }, data: { attempts: 4, availableAt: new Date(Date.now() - 1000) } }); await failedWorker.tick();
+      assert.equal((await prisma.notification.findUniqueOrThrow({ where: { id: retry.id } })).status, 'FAILED');
+      await prisma.$transaction(tx => outbox.booking(tx, id, 'concurrent', 1));
+      let deliveries = 0; const capture = { enabled: true, send: async () => { deliveries++; await new Promise(resolve => setTimeout(resolve, 100)); } };
+      await Promise.all([new NotificationsWorker(prisma, crypto, audit, capture).tick(), new NotificationsWorker(prisma, crypto, audit, capture).tick()]); assert.equal(deliveries, 1);
+    } finally {
+      transport.onModuleDestroy(); await new Promise(resolve => smtp.close(resolve));
+      for (const [key, value] of Object.entries(previous)) { if (value === undefined) delete process.env[key]; else process.env[key] = value; }
+    }
   });
   await t.test('logs não contêm dados pessoais; retenção requer política; rate limit funciona', async () => {
     assert.ok(!logs.includes('Paciente Teste')); assert.ok(!logs.includes(password)); assert.ok(!logs.includes('Motivo sensível'));

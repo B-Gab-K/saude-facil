@@ -4,3 +4,11 @@ backend/generated/
 backend/.env
 *.Zone.Identifier
 *:Zone.Identifier
+deploy/config/*.env
+deploy/secrets/
+backups/
+backend/test-results/
+backend/playwright-report/
+*.sfb
+*.sfb.manifest.json
+*.partial-*

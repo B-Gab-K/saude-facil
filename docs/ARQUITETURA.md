@@ -10,6 +10,7 @@ O sistema reserva uma vaga administrada pela instituição. Não há sincroniza�
 - `platform/`: configuração validada, criptografia, auditoria e HTTP. Cada serviço tem responsabilidade separada; o arquivamento legado e a expiração de sessões são serviços próprios.
 - `guidance/`: conteúdo educativo versionado, fontes, registro, validade e revogação de revisão profissional. Nenhuma classificação de risco automatizada.
 - `operations/`: saúde, métricas, leitura de auditoria e execução da política de retenção configurada.
+- `notifications/`: consentimento, confirmação de e-mail, outbox e worker. O transporte SMTP implementa um contrato substituível; a reserva não depende da disponibilidade do SMTP.
 
 A injeção de dependências do NestJS permite substituir o repositório e os serviços sem alterar controladores. DTOs aceitam apenas campos declarados. Não há endpoint que transforme cadastro público em perfil profissional ou administrativo.
 
@@ -18,7 +19,7 @@ A injeção de dependências do NestJS permite substituir o repositório e os se
 1. Administrador cadastra uma unidade. Administração/coordenação registra confirmação institucional, endereço e fonte antes da publicação.
 2. Serviço permanece em rascunho até validação de sua oferta. A lista pública não oferece serviços de exemplo.
 3. Administração/coordenação cadastra horários com início/fim e fuso explícito. Um código estável identifica cada profissional/recurso em todos os serviços da unidade.
-4. O paciente cria conta, entra e tem sua identidade conferida presencialmente pela equipe autorizada da unidade escolhida. O sistema registra quem conferiu e a referência do procedimento. Isso não consulta a Receita Federal ou o CNS, nem verifica automaticamente a propriedade do e-mail.
+4. O paciente cria conta com nome, e-mail e senha. A identificação (CPF, nascimento e unidade) é posterior e obrigatória antes da conferência presencial. O sistema registra quem conferiu e a referência do procedimento. Isso não consulta a Receita Federal ou o CNS. A propriedade do e-mail é confirmada separadamente, apenas quando a pessoa opta por notificações.
 5. A reserva consulta o banco novamente dentro de transação SERIALIZABLE. A identidade vem da sessão, nunca de CPF ou `patientId` enviado pelo navegador.
 6. Índice parcial exclusivo impede duas reservas não canceladas na mesma vaga. Constraint de exclusão impede sobreposição de slots do mesmo recurso, inclusive em serviços diferentes. A trava por paciente e a transação também impedem reservas simultâneas em intervalos conflitantes para a mesma pessoa.
 7. Cancelamento libera a vaga. Reagendamento valida a nova vaga e troca a reserva em uma única transação; falha preserva a reserva anterior. Só é permitido manter unidade e serviço. Alterações usam `version` para rejeitar telas desatualizadas.

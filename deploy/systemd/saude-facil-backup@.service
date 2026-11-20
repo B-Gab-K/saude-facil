@@ -1,0 +1,11 @@
+[Unit]
+Description=Backup cifrado Saúde Fácil (%i)
+After=docker.service
+Requires=docker.service
+[Service]
+Type=oneshot
+User=saude-facil
+WorkingDirectory=/opt/saude-facil
+UMask=0077
+ExecStart=/usr/bin/node scripts/backup-stack.mjs %i /var/backups/saude-facil/%i
+TimeoutStartSec=3600

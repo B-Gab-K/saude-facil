@@ -1,4 +1,4 @@
-import { IsDateString, IsEmail, IsIn, IsString, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsDateString, IsEmail, IsIn, IsString, IsUUID, Matches, MaxLength, MinLength, ValidateIf } from 'class-validator';
 import { Role } from '../../generated/prisma';
 
 export class LoginDto {
@@ -7,6 +7,11 @@ export class LoginDto {
 }
 export class RegisterDto extends LoginDto {
   @IsString() @Matches(/\S+\s+\S+/) @MaxLength(100) nome!: string;
+  @ValidateIf((_o, v) => v !== undefined) @IsString() @Matches(/^\d{11}$/) cpf?: string;
+  @ValidateIf((_o, v) => v !== undefined) @IsDateString({ strict: true }) @Matches(/^\d{4}-\d{2}-\d{2}$/) nasc?: string;
+  @ValidateIf((_o, v) => v !== undefined) @IsUUID() unitId?: string;
+}
+export class IdentityDto {
   @IsString() @Matches(/^\d{11}$/) cpf!: string;
   @IsDateString({ strict: true }) @Matches(/^\d{4}-\d{2}-\d{2}$/) nasc!: string;
   @IsUUID() unitId!: string;

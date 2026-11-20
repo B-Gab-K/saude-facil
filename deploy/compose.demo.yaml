@@ -1,0 +1,13 @@
+# Use only with the isolated saude-facil-demo Compose project.
+services:
+  app:
+    command: [sh, /app/start-hosted.sh]
+    environment:
+      DEMO_ADMIN_PASSWORD_FILE: /run/secrets/demo_admin_password
+      DEMO_PATIENT_PASSWORD_FILE: /run/secrets/demo_patient_password
+      DEMO_STAFF_PASSWORD_FILE: /run/secrets/demo_staff_password
+    secrets: [demo_admin_password, demo_patient_password, demo_staff_password]
+secrets:
+  demo_admin_password: {file: '${SECRETS_DIR:?}/demo_admin_password'}
+  demo_patient_password: {file: '${SECRETS_DIR:?}/demo_patient_password'}
+  demo_staff_password: {file: '${SECRETS_DIR:?}/demo_staff_password'}

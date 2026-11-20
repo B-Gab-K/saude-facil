@@ -4,10 +4,12 @@ import { Role } from '../../generated/prisma';
 import { AuthRequest, Public, Roles } from '../auth/access';
 import { AppointmentQuery } from '../appointments/dto/appointment.dto';
 import { OperationsService } from './operations.service';
+import { ConfigService } from '../platform/config.service';
 export class RetentionDto { @IsString() @MinLength(10) @MaxLength(200) policyReference!: string }
 @Controller('api/operations')
 export class OperationsController {
-  constructor(private readonly ops: OperationsService) {}
+  constructor(private readonly ops: OperationsService, private readonly config: ConfigService) {}
+  @Public() @Get('public-config') publicConfig() { return { demo: this.config.demoMode }; }
   @Public() @Get('health') health() { return this.ops.health(); }
   @Roles(Role.ADMIN) @Get('metrics') metrics(@Req() req: AuthRequest) { return this.ops.metrics(req.actor); }
   @Roles(Role.ADMIN) @Get('audit') audit(@Req() req: AuthRequest, @Query() query: AppointmentQuery) { return this.ops.auditEvents(req.actor, query); }

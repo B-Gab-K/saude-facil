@@ -6,6 +6,8 @@ Contas individuais, permissões por perfil/unidade, identidade conferida presenc
 
 O código está preparado para validação institucional. Ainda faltam dados oficiais de oferta/horários, aprovação dos responsáveis e políticas institucionais: veja [pendências e fontes](docs/VALIDACAO_INSTITUCIONAL.md). Para avaliação local, use dados inventados até essa liberação.
 
+A [hospedagem da demonstração](docs/HOSPEDAGEM_DEMONSTRACAO.md) dispõe de Blueprint Render com aplicação e PostgreSQL gratuitos, migrações e dados fictícios na inicialização. O modo de demonstração é separado da operação institucional e exibe aviso nas páginas. Criar a hospedagem ainda depende de uma conta autorizada e do envio desta versão ao repositório remoto.
+
 ## Estrutura
 
 - [frontend/](frontend/): telas, estilos e scripts; sem dados pessoais persistidos no navegador.
@@ -13,6 +15,8 @@ O código está preparado para validação institucional. Ainda faltam dados ofi
 - [docs/](docs/): arquitetura, segurança, validação e documentos históricos.
 
 Leia [arquitetura e regras](docs/ARQUITETURA.md) e [segurança e dados](docs/SEGURANCA_E_DADOS.md). Os demais roteiros anteriores em `docs/` descrevem o protótipo antigo e não substituem esses documentos.
+
+[Operação e deploy](docs/OPERACAO_E_DEPLOY.md) descreve os ambientes separados, CI/CD, backup/recuperação, atribuições/prazos e e-mail com consentimento. O [roteiro de usabilidade](docs/TESTES_DE_USABILIDADE.md) está pronto para aplicação com participantes externos.
 
 ## Executar localmente
 
@@ -61,10 +65,10 @@ Ao iniciar após as migrações, dados de demonstração antigos são cifrados e
 2. Cadastre unidades com endereço e fonte institucional. Registre a referência de validação para publicar.
 3. Cadastre e valide serviços; publique horários com fuso explícito e um código estável por profissional/recurso.
 4. Crie acessos individuais de recepção, enfermagem e coordenação, vinculados à unidade.
-5. Pacientes criam conta e têm a identidade conferida presencialmente na unidade escolhida. Depois podem reservar, cancelar e reagendar os próprios horários.
+5. Pacientes criam conta com nome, e-mail e senha. CPF, nascimento e unidade são preenchidos na etapa posterior de identificação. Após conferência presencial, podem reservar, cancelar e reagendar os próprios horários.
 6. O responsável clínico autorizado pode registrar revisão da orientação educativa em sua tela. Sem revisão válida, o sistema informa a pendência.
 
-Produção exige `NODE_ENV=production`, origens HTTPS e `TLS_CERT_PATH`/`TLS_KEY_PATH`. Retenção de textos suplementares só é executável com prazo e referência aprovados configurados, conforme [escopo da política](docs/SEGURANCA_E_DADOS.md). Deploy, backup e notificações não fazem parte desta etapa.
+Produção exige `NODE_ENV=production` e origens HTTPS. No modo TLS direto, também exige `TLS_CERT_PATH`/`TLS_KEY_PATH`; plataformas com HTTPS no proxy podem usar explicitamente `TLS_TERMINATION=proxy`, com porta HTTP interna isolada e cookies seguros preservados. Retenção de textos suplementares só é executável com prazo e referência aprovados configurados, conforme [escopo da política](docs/SEGURANCA_E_DADOS.md). A infraestrutura está preparada e testável localmente; publicação externa e envios reais continuam dependendo de acessos autorizados. Nenhum envio real é habilitado por padrão.
 
 ## Testes
 
@@ -82,3 +86,19 @@ npm run test:integration
 ```
 
 A suíte cria seu próprio schema temporário, aplica migrações e remove apenas esse schema ao concluir. Não aponta para o banco operacional. Valida autenticação, escopo, CSRF, criptografia, auditoria, limites, transições e reservas concorrentes com PostgreSQL real.
+
+Para os testes de navegador e acessibilidade automatizada:
+
+```bash
+cd backend
+npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
+O `TEST_DATABASE_URL` também é necessário nesse caso. O servidor de teste cria seu próprio schema e o remove ao encerrar. Os testes incluem cadastro progressivo, reserva/reagendamento/cancelamento, falha de rede, teclado, axe e reflow em 320/1280 pixels. Não equivalem a testes com usuários ou leitor de tela real.
+
+O teste de backup usa um container PostgreSQL **descartável** com permissão de criar bancos temporários:
+
+```bash
+BACKUP_TEST_CONTAINER=saude-facil-test-db BACKUP_TEST_USER=saude_test npm run test:backup
+```

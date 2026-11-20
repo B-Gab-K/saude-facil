@@ -19,7 +19,7 @@ async function bootstrap(): Promise<void> {
   app.enableCors({ origin: config.origins, credentials: true, allowedHeaders: ['Content-Type', 'X-CSRF-Token'], methods: ['GET', 'POST', 'PATCH', 'OPTIONS'] });
   app.useStaticAssets(resolve(__dirname, '../../frontend'), { index: 'index.html', etag: false, maxAge: 0 });
   app.enableShutdownHooks();
-  await app.listen(Number(process.env.PORT || 3001), '127.0.0.1');
+  await app.listen(Number(process.env.PORT || 3001), process.env.HOST || '127.0.0.1');
 }
 
 bootstrap().catch((error: unknown) => {

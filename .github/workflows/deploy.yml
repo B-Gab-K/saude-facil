@@ -1,0 +1,74 @@
+name: Deploy approved release
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        type: choice
+        options: [staging, production]
+permissions:
+  contents: read
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    uses: ./.github/workflows/ci.yml
+  package:
+    needs: verify
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.release.outputs.image }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Build and publish immutable image
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          image="ghcr.io/${GITHUB_REPOSITORY,,}:$GITHUB_SHA"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker build -f backend/Dockerfile -t "$image" .
+          docker push "$image"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$image")
+          printf 'image=%s\n' "$digest" >> "$GITHUB_OUTPUT"
+  deploy:
+    needs: package
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Deploy with host verification and pre-migration backup
+        env:
+          TARGET_ENV: ${{ inputs.environment }}
+          RELEASE_IMAGE: ${{ needs.package.outputs.image }}
+          SSH_HOST: ${{ secrets.DEPLOY_HOST }}
+          SSH_USER: ${{ secrets.DEPLOY_USER }}
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          test -n "$SSH_KEY" && test -n "$SSH_KNOWN_HOSTS"
+          [[ "$SSH_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          [[ "$SSH_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
+          [[ "$RELEASE_IMAGE" =~ ^ghcr.io/[a-z0-9./_-]+@sha256:[a-f0-9]{64}$ ]]
+          task_dir=$(mktemp -d)
+          trap 'rm -f "$task_dir/key" "$task_dir/known_hosts" "$task_dir/release.tgz"; rmdir "$task_dir"' EXIT
+          umask 077
+          printf '%s\n' "$SSH_KEY" > "$task_dir/key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$task_dir/known_hosts"
+          tar --exclude='deploy/secrets' --exclude='*.env' -czf "$task_dir/release.tgz" scripts deploy
+          scp -i "$task_dir/key" -o UserKnownHostsFile="$task_dir/known_hosts" -o StrictHostKeyChecking=yes "$task_dir/release.tgz" "$SSH_USER@$SSH_HOST:/opt/saude-facil/release.tgz"
+          ssh -i "$task_dir/key" -o UserKnownHostsFile="$task_dir/known_hosts" -o StrictHostKeyChecking=yes "$SSH_USER@$SSH_HOST" sh -s -- "$TARGET_ENV" "$RELEASE_IMAGE" <<'REMOTE'
+          set -eu
+          cd /opt/saude-facil
+          tar -xzf release.tgz
+          node scripts/deploy.mjs "$1" "$2"
+          rm -f release.tgz
+          REMOTE

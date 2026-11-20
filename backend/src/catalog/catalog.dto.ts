@@ -17,6 +17,10 @@ export class ApprovalDto {
 export class ActiveDto {
   @IsBoolean() active!: boolean;
 }
+export class UnitOperationsDto {
+  @IsUUID() responsibleUserId!: string;
+  @IsInt() @Min(15) @Max(10080) responseMinutes!: number;
+}
 export class SlotDto {
   @IsUUID() serviceId!: string;
   @IsString() @Matches(/^[a-zA-Z0-9_-]{2,64}$/) resource!: string;

@@ -248,3 +248,19 @@ input:not([type=radio]):not([type=checkbox]),select,textarea{border-color:#b7cbc
 .access-panel .access-warning{margin-top:26px}
 .metric{border-color:#dceae3}
 @media(max-width:640px){.page-head{padding:12px 0}.access-panel{padding:22px 17px}.access-panel .role-grid{grid-template-columns:1fr}.access-panel .role-card{padding:18px;min-height:0}.access-panel .role-card .role-description{display:block}.access-panel .role-secondary-placeholder{display:none}.access-panel h1{font-size:2rem}.access-panel .lead{margin-bottom:20px}}
+
+/* Foco, leitura e interação em teclado, ampliação e telas estreitas. */
+main:focus{outline:none}
+a,button,input,select,textarea{touch-action:manipulation}
+:focus-visible,.btn:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #124e94;outline-offset:3px}
+.page-head :focus-visible{outline-color:#fff}
+.status.confirmed{background:#d9efe3;color:#114b31}
+.status.analysis{background:#e2eefc;color:#174378}
+.status.done{background:#e4eee9;color:#264b3a}
+.detail-pair dd,.appointment,.queue-item,.panel{overflow-wrap:anywhere;min-width:0}
+.field,select{min-width:0;max-width:100%}
+.checkbox-line input{min-width:24px;min-height:24px}
+input:not([type=radio]):not([type=checkbox]),select,textarea{font-size:1rem}
+[aria-busy=true]{cursor:progress}
+@media(max-width:640px){.detail-list{grid-template-columns:1fr}.queue-item{grid-template-columns:1fr}.page-head .nav a{white-space:normal}.filter-bar{grid-template-columns:1fr}.actions>*{min-width:0}}
+@media(prefers-contrast:more){input,select,textarea,.panel,.btn-subtle{border-color:#31554c}.help,.small{color:#28473f}}

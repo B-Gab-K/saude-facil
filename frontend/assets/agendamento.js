@@ -2,17 +2,25 @@
   'use strict';
   const sf = SaudeFacil, $ = id => document.getElementById(id), user = await sf.requireAuth(['PATIENT']);
   if (!user) return;
-  let units = [], slots = [], previous = null, mapAddress = '', page = 1;
+  let units = [], slots = [], previous = null, mapAddress = '', page = 1, slotRequest = 0;
   const id = new URLSearchParams(location.search).get('reagendar');
-  if (!user.verified) { $('erro').textContent = 'Compareça à unidade escolhida no cadastro para conferir sua identidade antes de agendar.'; $('confirmar').disabled = true; return; }
+  if (!user.verified) {
+    $('erro').textContent = user.identityComplete ? 'Confira sua identidade presencialmente na unidade escolhida para liberar os horários.' : 'Complete sua identificação antes de agendar.';
+    const link = sf.make('a', user.identityComplete ? 'Consultar minha conta' : 'Completar identificação', 'btn btn-primary'); link.href = user.identityComplete ? 'conta.html' : 'identificacao.html'; $('erro').after(link);
+    $('confirmar').disabled = true; return;
+  }
   async function loadSlots() {
+    const generation = ++slotRequest; slots = []; $('horario').disabled = true;
     $('horario').replaceChildren(new Option('Selecione um horário', '')); $('maisHorarios').hidden = true;
+    $('anteriorHorarios').hidden = true;
     const serviceId = $('servico').value;
     if (!serviceId) return;
     const query = new URLSearchParams({ serviceId, page, limit: 50 });
     const result = await sf.request('/catalog/slots?' + query);
+    if (generation !== slotRequest) return;
     slots = result.items;
     slots.forEach(slot => $('horario').add(new Option(sf.slotLabel(slot, units.find(unit => unit.id === $('ubs').value).timezone), slot.id)));
+    $('horario').disabled = !slots.length;
     $('maisHorarios').hidden = result.total <= page * 50;
     $('anteriorHorarios').hidden = page === 1;
     $('disponibilidade').textContent = result.total ? `${result.total} horários disponíveis. Página ${page}. Horários de Cáceres (MT).` : 'Nenhum horário disponível para este serviço nos próximos 90 dias.';
@@ -33,7 +41,7 @@
     if (id) {
       previous = await sf.request('/solicitacoes/' + encodeURIComponent(id));
       $('ubs').value = previous.unitId; selectUnit(); $('servico').value = previous.serviceId;
-      $('ubs').disabled = true; $('servico').disabled = true; $('confirmar').textContent = 'Confirmar reagendamento'; await loadSlots();
+      $('ubs').disabled = true; $('servico').disabled = true; $('sintomas').closest('.field').hidden = true; $('ditar').parentElement.hidden = true; $('confirmar').textContent = 'Confirmar reagendamento'; document.querySelector('h1').textContent = 'Escolher novo horário'; await loadSlots();
     }
     if (!units.length) $('disponibilidade').textContent = 'A instituição ainda não publicou unidades e serviços validados.';
   } catch (error) { sf.error($('erro'), error); }
