@@ -1,6 +1,6 @@
 # Operação e implantação
 
-Implementação dos itens 5 e 6 em 20/11/2026. Os arquivos permitem executar e validar os ambientes; não foi publicado nenhum servidor externo. Dados oficiais, domínio, acessos ao host, política institucional e provedor SMTP ainda precisam ser fornecidos pela instituição.
+Este guia descreve os ambientes Docker Compose e a implantação em servidor próprio. O ambiente público atual está no Render, com aplicação e PostgreSQL independentes do computador local: consulte [hospedagem atual](HOSPEDAGEM.md). O workflow SSH/GHCR abaixo é uma alternativa preparada, sem host de destino configurado. Dados oficiais, domínio próprio, política institucional e provedor SMTP dependem dos responsáveis.
 
 ## Ambientes separados
 
@@ -48,7 +48,7 @@ O [workflow de implantação](../.github/workflows/deploy.yml) é acionado manua
 
 Para ativar o workflow, um administrador precisa configurar os GitHub Environments `staging` e `production`, restrição de branch e revisores obrigatórios de produção. Em cada ambiente, cadastrar `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY` e `DEPLOY_KNOWN_HOSTS` (chave do servidor conferida fora do canal SSH). Nunca desabilitar a verificação da chave do host. O usuário remoto precisa ter acesso somente à instalação acordada e autorização para Docker; acesso ao Docker equivale a privilégios administrativos no host.
 
-O host deve ter Node, Compose, diretório `/opt/saude-facil` preparado, configurações/segredos provisionados e autenticação de leitura no GHCR quando a imagem for privada. O workflow não transmite chaves de dados, senhas do banco ou arquivos `.env` junto do código. Nenhum desses acessos foi inventado ou configurado em contas externas.
+O host deve ter Node, Compose, diretório `/opt/saude-facil` preparado, configurações/segredos provisionados e autenticação de leitura no GHCR quando a imagem for privada. O workflow não transmite chaves de dados, senhas do banco ou arquivos `.env` junto do código. Os acessos SSH e os segredos dos GitHub Environments para esse fluxo não estão configurados. A publicação existente no Render usa o repositório Git e um fluxo separado, descrito no guia de hospedagem.
 
 ## Backup e recuperação
 

@@ -1,14 +1,24 @@
+# Dependências e saídas geradas
 node_modules/
 backend/dist/
 backend/generated/
-backend/.env
-*.Zone.Identifier
-*:Zone.Identifier
+
+# Configurações e credenciais locais
+.env
+.env.*
+!.env.example
 deploy/config/*.env
 deploy/secrets/
+ACESSOS.txt
+
+# Backups e evidências de teste
 backups/
 backend/test-results/
 backend/playwright-report/
 *.sfb
 *.sfb.manifest.json
 *.partial-*
+
+# Metadados locais do Windows
+*.Zone.Identifier
+*:Zone.Identifier

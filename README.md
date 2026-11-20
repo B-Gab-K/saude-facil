@@ -1,104 +1,71 @@
 # Saúde Fácil
 
-Portal de agendamento com interface HTML/JavaScript, API NestJS e PostgreSQL/Prisma. A reserva ocupa uma vaga real **da agenda cadastrada e validada pela instituição neste sistema**; não há sincronização com agendas externas do SUS.
+Portal de agendamento e acompanhamento de atendimentos, com área do paciente, agenda profissional e gestão de unidades e serviços.
 
-Contas individuais, permissões por perfil/unidade, identidade conferida presencialmente, sessões HttpOnly, dados pessoais e de saúde cifrados, auditoria e reserva transacional. A orientação é educativa e não realiza diagnóstico nem triagem automatizada.
+**Aplicação:** [saude-facil-demo-hhyy.onrender.com](https://saude-facil-demo-hhyy.onrender.com) · **Stack:** HTML/CSS/JavaScript, NestJS, Prisma e PostgreSQL 16.
 
-O código está preparado para validação institucional. Ainda faltam dados oficiais de oferta/horários, aprovação dos responsáveis e políticas institucionais: veja [pendências e fontes](docs/VALIDACAO_INSTITUCIONAL.md). Para avaliação local, use dados inventados até essa liberação.
+## Começar
 
-A [demonstração pública](https://saude-facil-demo-hhyy.onrender.com) foi publicada no Render em 20/11/2026, com aplicação e PostgreSQL gratuitos, migrações e dados fictícios na inicialização. O ambiente de demonstração é separado da operação institucional. A interface usa a apresentação padrão do portal, sem faixas acadêmicas ou rótulos de dados fictícios; a identificação do ambiente permanece na configuração e na documentação técnica. A [documentação de hospedagem](docs/HOSPEDAGEM_DEMONSTRACAO.md) registra a verificação e os limites do plano gratuito, incluindo a expiração do banco em 20/12/2026.
-
-## Estrutura
-
-- [frontend/](frontend/): telas, estilos e scripts; sem dados pessoais persistidos no navegador.
-- [backend/](backend/): módulos da API, Prisma, migrações e testes.
-- [docs/](docs/): arquitetura, segurança, validação e documentos históricos.
-
-Leia [arquitetura e regras](docs/ARQUITETURA.md) e [segurança e dados](docs/SEGURANCA_E_DADOS.md). Os demais roteiros anteriores em `docs/` descrevem o protótipo antigo e não substituem esses documentos.
-
-[Operação e deploy](docs/OPERACAO_E_DEPLOY.md) descreve os ambientes separados, CI/CD, backup/recuperação, atribuições/prazos e e-mail com consentimento. O [roteiro de usabilidade](docs/TESTES_DE_USABILIDADE.md) está pronto para aplicação com participantes externos.
-
-## Executar localmente
-
-Requisitos: Node.js 22.9+, npm e PostgreSQL 16. Docker pode fornecer o banco. Não reutilize credenciais de desenvolvimento em ambiente operacional.
+Requisitos: Node.js 22.9 ou superior, npm e PostgreSQL 16. Docker é opcional para executar o banco e os ambientes completos.
 
 ```bash
-docker run --name saude-facil-dev-db -e POSTGRES_USER=saude -e POSTGRES_PASSWORD=saude -e POSTGRES_DB=saude_facil -p 127.0.0.1:55432:5432 -d postgres:16-alpine
-cd backend
-npm ci
-cp .env.example .env
+npm run setup
+cp backend/.env.example backend/.env
 ```
 
-Gere duas chaves diferentes com o comando abaixo, uma por execução, e configure `DATA_ENCRYPTION_KEY` e `LOOKUP_HMAC_KEY` no arquivo local `.env`:
+Configure a conexão e as duas chaves independentes em `backend/.env`, conforme o [guia de desenvolvimento](docs/DESENVOLVIMENTO.md). Depois:
 
 ```bash
-node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-```
-
-Confira `DATABASE_URL` e execute:
-
-```bash
-npm run prisma:generate
-npm run prisma:migrate
+npm run db:migrate
 npm run build
-```
-
-Crie o primeiro administrador com credenciais próprias, usando variáveis de ambiente. A senha não possui valor padrão. Exemplo com prompt sem eco para não deixar a senha no histórico do shell:
-
-```bash
-read -r -p 'E-mail administrativo: ' ADMIN_EMAIL
-read -r -p 'Nome: ' ADMIN_NAME
-read -r -s -p 'Senha (12 a 128 caracteres): ' ADMIN_PASSWORD
-export ADMIN_EMAIL ADMIN_NAME ADMIN_PASSWORD
-npm run admin:bootstrap
-unset ADMIN_PASSWORD ADMIN_EMAIL ADMIN_NAME
 npm start
 ```
 
-Abra **http://localhost:3001**. A própria API serve o frontend, sem precisar de um servidor estático separado. O backend continua escutando apenas em loopback. Opcionalmente, o frontend pode ser servido na porta 8000, no mesmo hostname e nas origens configuradas.
+O ambiente local abre em **http://localhost:3001**. O [guia completo](docs/DESENVOLVIMENTO.md) inclui banco de desenvolvimento, criação do primeiro administrador e preparação dos testes. Para editar e executar com TypeScript, use `npm run dev`.
 
-Ao iniciar após as migrações, dados de demonstração antigos são cifrados e preservados em arquivo legado separado das reservas. Eles não são atribuídos a pacientes reais ou convertidos em horários confirmados. Guarde as chaves: perdê-las impede recuperar esses dados.
+## Estrutura
 
-## Configurar a instituição
+| Caminho | Responsabilidade |
+| --- | --- |
+| [frontend/](frontend/README.md) | Páginas, navegação, estilos e interação com a API |
+| [backend/](backend/README.md) | API, regras de negócio, persistência e testes |
+| [deploy/](deploy/README.md) | Docker Compose, configurações por ambiente e inicialização |
+| [scripts/](scripts/README.md) | Ferramentas de operação, implantação e backup |
+| [docs/](docs/README.md) | Guias atuais e histórico separado por contexto |
+| [render.yaml](render.yaml) | Infraestrutura da aplicação e do PostgreSQL no Render |
+| [.github/workflows/](.github/workflows/) | Validação automática e implantação alternativa por SSH |
 
-1. Entre como administrador em “Área profissional” e abra a gestão.
-2. Cadastre unidades com endereço e fonte institucional. Registre a referência de validação para publicar.
-3. Cadastre e valide serviços; publique horários com fuso explícito e um código estável por profissional/recurso.
-4. Crie acessos individuais de recepção, enfermagem e coordenação, vinculados à unidade.
-5. Pacientes criam conta com nome, e-mail e senha. CPF, nascimento e unidade são preenchidos na etapa posterior de identificação. Após conferência presencial, podem reservar, cancelar e reagendar os próprios horários.
-6. O responsável clínico autorizado pode registrar revisão da orientação educativa em sua tela. A data da revisão aparece nas orientações quando há uma revisão válida registrada.
+## Comandos na raiz
 
-Produção exige `NODE_ENV=production` e origens HTTPS. No modo TLS direto, também exige `TLS_CERT_PATH`/`TLS_KEY_PATH`; plataformas com HTTPS no proxy podem usar explicitamente `TLS_TERMINATION=proxy`, com porta HTTP interna isolada e cookies seguros preservados. Retenção de textos suplementares só é executável com prazo e referência aprovados configurados, conforme [escopo da política](docs/SEGURANCA_E_DADOS.md). A infraestrutura está preparada e testável localmente; publicação externa e envios reais continuam dependendo de acessos autorizados. Nenhum envio real é habilitado por padrão.
+| Comando | Finalidade |
+| --- | --- |
+| `npm run setup` | Instalar as dependências da API e gerar o cliente Prisma |
+| `npm run dev` | Executar a aplicação local a partir do TypeScript |
+| `npm run build` | Compilar a API |
+| `npm start` | Executar a API compilada e servir o frontend |
+| `npm run db:generate` | Gerar o cliente Prisma após mudanças no schema |
+| `npm run db:migrate` | Aplicar as migrações ao banco configurado |
+| `npm run admin:bootstrap` | Criar o primeiro administrador com as variáveis fornecidas |
+| `npm test` | Compilar e executar os testes unitários |
+| `npm run test:integration` | Executar integração em banco exclusivo de testes |
+| `npm run test:e2e` | Executar os testes de navegador e acessibilidade |
+| `npm run test:backup` | Verificar backup e restauração em banco descartável |
 
-## Testes
+Integração e navegador exigem `TEST_DATABASE_URL` com nome de banco terminado em `_test`. Consulte os requisitos de cada suíte no [guia de desenvolvimento](docs/DESENVOLVIMENTO.md#testes).
 
-```bash
-cd backend
-npm run test:unit
-```
+## Hospedagem e acessos
 
-Para integração, use exclusivamente um banco de testes com nome terminado em `_test`, por exemplo:
+A aplicação e o banco estão no Render e funcionam com o computador local desligado. O banco gratuito atual expira em **20/12/2026**; estado, atualização e limites estão no [guia de hospedagem](docs/HOSPEDAGEM.md).
 
-```bash
-docker run --name saude-facil-test-db -e POSTGRES_USER=saude_test -e POSTGRES_PASSWORD=local_test_only -e POSTGRES_DB=saude_facil_test -p 127.0.0.1:55433:5432 -d postgres:16-alpine
-export TEST_DATABASE_URL='postgresql://saude_test:local_test_only@127.0.0.1:55433/saude_facil_test?schema=public'
-npm run test:integration
-```
+O arquivo privado **`deploy/secrets/ACESSOS.txt`** reúne os acessos conferidos do site publicado. Os acessos do ambiente local ficam em `deploy/secrets/demo/ACESSOS.txt`. Ambos ficam fora do Git. Consulte o [guia de acessos](docs/ACESSOS.md) para os perfis e a manutenção desses arquivos.
 
-A suíte cria seu próprio schema temporário, aplica migrações e remove apenas esse schema ao concluir. Não aponta para o banco operacional. Valida autenticação, escopo, CSRF, criptografia, auditoria, limites, transições e reservas concorrentes com PostgreSQL real.
+## Documentação técnica
 
-Para os testes de navegador e acessibilidade automatizada:
+- [Arquitetura e regras de agendamento](docs/ARQUITETURA.md)
+- [Segurança e proteção dos dados](docs/SEGURANCA_E_DADOS.md)
+- [Operação, ambientes e backup](docs/OPERACAO_E_DEPLOY.md)
+- [Validação institucional](docs/VALIDACAO_INSTITUCIONAL.md)
+- [Roteiro de usabilidade](docs/TESTES_DE_USABILIDADE.md)
+- [Documentação histórica](docs/historico/README.md)
 
-```bash
-cd backend
-npx playwright install --with-deps chromium
-npm run test:e2e
-```
-
-O `TEST_DATABASE_URL` também é necessário nesse caso. O servidor de teste cria seu próprio schema e o remove ao encerrar. Os testes incluem cadastro progressivo, reserva/reagendamento/cancelamento, falha de rede, teclado, axe e reflow em 320/1280 pixels. Não equivalem a testes com usuários ou leitor de tela real.
-
-O teste de backup usa um container PostgreSQL **descartável** com permissão de criar bancos temporários:
-
-```bash
-BACKUP_TEST_CONTAINER=saude-facil-test-db BACKUP_TEST_USER=saude_test npm run test:backup
-```
+O ambiente acadêmico é separado de uma eventual operação institucional. A agenda não sincroniza com sistemas externos do SUS, e as orientações de saúde não realizam diagnóstico ou triagem automatizada. Os requisitos de liberação estão registrados no guia de validação.

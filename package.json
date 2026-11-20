@@ -1,0 +1,23 @@
+{
+  "name": "saude-facil",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Portal de agendamento e acompanhamento de atendimentos",
+  "engines": {
+    "node": ">=22.9.0"
+  },
+  "scripts": {
+    "setup": "npm --prefix backend ci && npm --prefix backend run prisma:generate",
+    "dev": "npm --prefix backend run dev",
+    "build": "npm --prefix backend run build",
+    "start": "npm --prefix backend start",
+    "db:generate": "npm --prefix backend run prisma:generate",
+    "db:migrate": "npm --prefix backend run prisma:migrate",
+    "admin:bootstrap": "npm --prefix backend run admin:bootstrap",
+    "test": "npm run test:unit",
+    "test:unit": "npm --prefix backend run test:unit",
+    "test:integration": "npm --prefix backend run test:integration",
+    "test:e2e": "npm --prefix backend run test:e2e",
+    "test:backup": "npm --prefix backend run test:backup"
+  }
+}

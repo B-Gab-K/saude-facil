@@ -13,7 +13,19 @@ await mkdir(dirname(config), { recursive: true });
 const password = randomBytes(32).toString('hex');
 const values = { database_password: password, database_url: `postgresql://saude:${password}@db:5432/saude_facil_demo?schema=public`, data_key: randomBytes(32).toString('hex'), lookup_key: randomBytes(32).toString('hex'), demo_admin_password: randomBytes(24).toString('base64url'), demo_patient_password: randomBytes(24).toString('base64url'), demo_staff_password: randomBytes(24).toString('base64url') };
 for (const [name, value] of Object.entries(values)) await writeFile(resolve(secrets, name), value + '\n', { flag: 'wx', mode: 0o600 });
-const accounts = `Contas exclusivas da demonstração acadêmica. Não publicar este arquivo.\n\nAdministração: admin@example.test\nSenha: ${values.demo_admin_password}\n\nPaciente: paciente@example.test\nSenha: ${values.demo_patient_password}\n\nRecepção: recepcao@example.test\nEnfermagem: enfermagem@example.test\nCoordenação: coordenacao@example.test\nSenha da equipe fictícia: ${values.demo_staff_password}\n`;
+const accounts = [
+  'SAÚDE FÁCIL — ACESSOS AO AMBIENTE LOCAL', '',
+  'Endereço local: http://localhost:3102',
+  `Origem pública deste ambiente local: ${origin}`,
+  'Para o site principal do Render, consulte deploy/secrets/ACESSOS.txt.',
+  'Credenciais geradas nesta instalação; ainda não conferidas por login.', '',
+  'ADMINISTRAÇÃO', 'E-mail: admin@example.test', `Senha: ${values.demo_admin_password}`, '',
+  'PACIENTE', 'E-mail: paciente@example.test', `Senha: ${values.demo_patient_password}`, '',
+  'RECEPÇÃO', 'E-mail: recepcao@example.test', `Senha: ${values.demo_staff_password}`, '',
+  'ENFERMAGEM', 'E-mail: enfermagem@example.test', `Senha: ${values.demo_staff_password}`, '',
+  'COORDENAÇÃO', 'E-mail: coordenacao@example.test', `Senha: ${values.demo_staff_password}`, '',
+  'Arquivo privado, fora do Git. Não compartilhar como acesso ao site principal.', '',
+].join('\n');
 await writeFile(resolve(secrets, 'ACESSOS.txt'), accounts, { flag: 'wx', mode: 0o600 });
 await writeFile(config, `APP_ENV=staging\nNODE_ENV=production\nTLS_TERMINATION=proxy\nDEMO_MODE=true\nSEED_DEMO=true\nNOTIFICATION_MODE=disabled\nAPP_IMAGE=saude-facil:demo\nAPP_UID=${process.getuid()}\nAPP_GID=${process.getgid()}\nCONFIG_FILE=./config/demo.env\nSECRETS_DIR=./secrets/demo\nPOSTGRES_DB=saude_facil_demo\nBIND_ADDRESS=127.0.0.1\nAPP_PORT=3102\nPORT=3001\nFRONTEND_ORIGINS=${origin}\n`, { flag: 'wx', mode: 0o600 });
 process.stdout.write('Demonstração isolada preparada. Credenciais em deploy/secrets/demo/ACESSOS.txt; nenhum segredo foi impresso.\n');

@@ -32,7 +32,7 @@ Não foram realizados teste de usabilidade com pacientes, auditoria formal de ac
 - CI e deploy manual com imagem imutável preparados em arquivos locais. Workflow remoto, agendamento de backups no servidor, cópia externa e SMTP real não foram ativados sem acessos/destinos aprovados.
 - `npm audit --omit=dev` não reportou vulnerabilidades conhecidas nas dependências de execução na verificação desta etapa.
 
-Faltam participantes/facilitador para o [teste de usabilidade e tecnologia assistiva real](TESTES_DE_USABILIDADE.md). O [procedimento operacional](OPERACAO_E_DEPLOY.md) identifica os acessos e decisões ainda necessários. Nenhum resultado de usuários reais foi atribuído aos testes automatizados.
+Faltam participantes/facilitador para o [teste de usabilidade e tecnologia assistiva real](../TESTES_DE_USABILIDADE.md). O [procedimento operacional](../OPERACAO_E_DEPLOY.md) identifica os acessos e decisões ainda necessários. Nenhum resultado de usuários reais foi atribuído aos testes automatizados.
 
 ## Atualização de 20/11/2026 — hospedagem de demonstração
 

@@ -15,7 +15,7 @@
 
 `DATA_ENCRYPTION_KEY` e `LOOKUP_HMAC_KEY`: duas chaves diferentes, aleatórias, de 32 bytes em hexadecimal ou base64 canônico. `.env` e artefatos gerados são ignorados pelo Git. Nunca imprimir chaves ou senhas nos logs. A aplicação rejeita configuração ausente/inválida e origens HTTP em produção.
 
-TLS direto permanece o padrão. `TLS_TERMINATION=proxy` permite HTTP apenas no trecho interno isolado de uma hospedagem que fornece HTTPS público; essa escolha deve ser explícita. Os cookies de produção mantêm `Secure`, `HttpOnly`, `SameSite=Strict` e prefixo `__Host-` mesmo sem certificado dentro do processo. Não há confiança genérica em cabeçalhos encaminhados pelo visitante. Veja [hospedagem da demonstração](HOSPEDAGEM_DEMONSTRACAO.md).
+TLS direto permanece o padrão. `TLS_TERMINATION=proxy` permite HTTP apenas no trecho interno isolado de uma hospedagem que fornece HTTPS público; essa escolha deve ser explícita. Os cookies de produção mantêm `Secure`, `HttpOnly`, `SameSite=Strict` e prefixo `__Host-` mesmo sem certificado dentro do processo. Não há confiança genérica em cabeçalhos encaminhados pelo visitante. Veja [hospedagem atual](HOSPEDAGEM.md).
 
 Não trocar essas chaves diretamente em uma instalação com dados. A perda da chave de criptografia impede recuperar os dados. A troca da chave de busca exige recalcular índices. A rotação deve ser uma migração controlada com guarda e revisão da instituição; não foi implementada uma rotação automática.
 

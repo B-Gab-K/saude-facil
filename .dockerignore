@@ -6,6 +6,9 @@ backend/test
 backend/test-results
 backend/playwright-report
 **/.env
+**/.env.*
+!**/.env.example
+**/ACESSOS.txt
 deploy/config/*.env
 deploy/secrets
 backups
