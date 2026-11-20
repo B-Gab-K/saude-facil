@@ -6,7 +6,7 @@ Contas individuais, permissões por perfil/unidade, identidade conferida presenc
 
 O código está preparado para validação institucional. Ainda faltam dados oficiais de oferta/horários, aprovação dos responsáveis e políticas institucionais: veja [pendências e fontes](docs/VALIDACAO_INSTITUCIONAL.md). Para avaliação local, use dados inventados até essa liberação.
 
-A [demonstração pública](https://saude-facil-demo-hhyy.onrender.com) foi publicada no Render em 20/11/2026, com aplicação e PostgreSQL gratuitos, migrações e dados fictícios na inicialização. O modo de demonstração é separado da operação institucional e exibe aviso nas páginas. A [documentação de hospedagem](docs/HOSPEDAGEM_DEMONSTRACAO.md) registra a verificação e os limites do plano gratuito, incluindo a expiração do banco em 20/12/2026.
+A [demonstração pública](https://saude-facil-demo-hhyy.onrender.com) foi publicada no Render em 20/11/2026, com aplicação e PostgreSQL gratuitos, migrações e dados fictícios na inicialização. O ambiente de demonstração é separado da operação institucional. A interface usa a apresentação padrão do portal, sem faixas acadêmicas ou rótulos de dados fictícios; a identificação do ambiente permanece na configuração e na documentação técnica. A [documentação de hospedagem](docs/HOSPEDAGEM_DEMONSTRACAO.md) registra a verificação e os limites do plano gratuito, incluindo a expiração do banco em 20/12/2026.
 
 ## Estrutura
 
@@ -66,7 +66,7 @@ Ao iniciar após as migrações, dados de demonstração antigos são cifrados e
 3. Cadastre e valide serviços; publique horários com fuso explícito e um código estável por profissional/recurso.
 4. Crie acessos individuais de recepção, enfermagem e coordenação, vinculados à unidade.
 5. Pacientes criam conta com nome, e-mail e senha. CPF, nascimento e unidade são preenchidos na etapa posterior de identificação. Após conferência presencial, podem reservar, cancelar e reagendar os próprios horários.
-6. O responsável clínico autorizado pode registrar revisão da orientação educativa em sua tela. Sem revisão válida, o sistema informa a pendência.
+6. O responsável clínico autorizado pode registrar revisão da orientação educativa em sua tela. A data da revisão aparece nas orientações quando há uma revisão válida registrada.
 
 Produção exige `NODE_ENV=production` e origens HTTPS. No modo TLS direto, também exige `TLS_CERT_PATH`/`TLS_KEY_PATH`; plataformas com HTTPS no proxy podem usar explicitamente `TLS_TERMINATION=proxy`, com porta HTTP interna isolada e cookies seguros preservados. Retenção de textos suplementares só é executável com prazo e referência aprovados configurados, conforme [escopo da política](docs/SEGURANCA_E_DADOS.md). A infraestrutura está preparada e testável localmente; publicação externa e envios reais continuam dependendo de acessos autorizados. Nenhum envio real é habilitado por padrão.
 

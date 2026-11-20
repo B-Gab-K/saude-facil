@@ -39,6 +39,55 @@ test('inicialização hospedada, seed isolado, sessão segura e reserva pela API
     finally { process.env.DATA_ENCRYPTION_KEY = original; }
     assert.equal(await prisma.user.count(), 5);
   });
+  await t.test('atualiza rótulos antigos preservando contas, reservas e personalizações', async () => {
+    const crypto = new CryptoService(config);
+    const unit = await prisma.healthUnit.findFirstOrThrow({ include: { services: true } });
+    const service = unit.services[0], accounts = await prisma.user.findMany();
+    const profiles = new Map(accounts.map(user => [user.id, crypto.decrypt(user.profileCipher, `user:${user.id}`)]));
+    await prisma.healthUnit.update({ where: { id: unit.id }, data: { name: 'Unidade Fictícia — Demonstração', address: 'Endereço fictício, Cáceres MT' } });
+    await prisma.careService.update({ where: { id: service.id }, data: { name: 'Atendimento fictício' } });
+    for (const account of demoAccounts) {
+      const user = accounts.find(user => user.emailHash === crypto.lookup(account.email, 'email'));
+      const nome = account.role === 'RECEPTION' ? 'Equipe da recepção' : account.previousName;
+      await prisma.user.update({ where: { id: user.id }, data: { profileCipher: crypto.encrypt({ ...profiles.get(user.id), nome }, `user:${user.id}`), searchTokens: crypto.nameTokens(nome) } });
+    }
+    const patient = accounts.find(user => user.role === 'PATIENT');
+    const session = await prisma.session.create({ data: { id: randomUUID(), userId: patient.id, expiresAt: new Date(Date.now() + 3600000) } });
+    const slot = await prisma.scheduleSlot.findFirstOrThrow();
+    const bookingId = randomUUID();
+    const booking = await prisma.booking.create({ data: { id: bookingId, patientId: patient.id, slotId: slot.id, reasonCipher: crypto.encrypt('Consulta', `reason:${bookingId}`), noteCipher: crypto.encrypt('', `note:${bookingId}`) } });
+    try {
+      await seedDemo(prisma, config);
+      const updatedUnit = await prisma.healthUnit.findUniqueOrThrow({ where: { id: unit.id } });
+      assert.equal(updatedUnit.name, 'Unidade Saúde Fácil'); assert.equal(updatedUnit.address, 'Cáceres, MT');
+      assert.equal((await prisma.careService.findUniqueOrThrow({ where: { id: service.id } })).name, 'Clínica geral');
+      for (const account of demoAccounts) {
+        const original = accounts.find(user => user.emailHash === crypto.lookup(account.email, 'email'));
+        const user = await prisma.user.findUniqueOrThrow({ where: { id: original.id } });
+        const nome = account.role === 'RECEPTION' ? 'Equipe da recepção' : account.nome;
+        assert.deepEqual(crypto.decrypt(user.profileCipher, `user:${user.id}`), { ...profiles.get(user.id), nome });
+        assert.deepEqual(user.searchTokens, crypto.nameTokens(nome));
+        for (const field of ['passwordHash', 'emailHash', 'identityHash', 'unitId', 'role']) assert.equal(user[field], original[field]);
+      }
+      await prisma.healthUnit.update({ where: { id: unit.id }, data: { name: 'Unidade personalizada', address: 'Endereço atualizado' } });
+      await prisma.careService.update({ where: { id: service.id }, data: { name: 'Serviço personalizado' } });
+      const ciphers = (await prisma.user.findMany({ orderBy: { id: 'asc' } })).map(user => user.profileCipher);
+      await seedDemo(prisma, config);
+      const customizedUnit = await prisma.healthUnit.findUniqueOrThrow({ where: { id: unit.id } });
+      assert.equal(customizedUnit.name, 'Unidade personalizada'); assert.equal(customizedUnit.address, 'Endereço atualizado');
+      assert.equal((await prisma.careService.findUniqueOrThrow({ where: { id: service.id } })).name, 'Serviço personalizado');
+      assert.deepEqual((await prisma.user.findMany({ orderBy: { id: 'asc' } })).map(user => user.profileCipher), ciphers);
+      assert.deepEqual(await prisma.session.findUnique({ where: { id: session.id } }), session);
+      assert.deepEqual(await prisma.booking.findUnique({ where: { id: booking.id } }), booking);
+      assert.equal(await prisma.auditEvent.count({ where: { action: 'DEMO_PRESENTATION_UPDATED' } }), 1);
+      assert.equal(await prisma.user.count(), 5); assert.equal(await prisma.scheduleSlot.count(), 21);
+    } finally {
+      await prisma.booking.delete({ where: { id: booking.id } });
+      await prisma.session.delete({ where: { id: session.id } });
+      await prisma.healthUnit.update({ where: { id: unit.id }, data: { name: unit.name, address: unit.address } });
+      await prisma.careService.update({ where: { id: service.id }, data: { name: service.name } });
+    }
+  });
   await t.test('redefinição explícita troca somente as cinco contas fictícias, revoga sessões e executa uma vez', async () => {
     const crypto = new CryptoService(config);
     const accounts = await prisma.user.findMany();
@@ -101,14 +150,16 @@ test('inicialização hospedada, seed isolado, sessão segura e reserva pela API
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   assert.ok(ready, 'Inicialização hospedada falhou.');
-  await t.test('aviso público, login e reserva preservam autorização e cookies seguros', async () => {
+  await t.test('configuração pública, login e reserva preservam autorização e cookies seguros', async () => {
     assert.deepEqual(await (await fetch(base + '/operations/public-config')).json(), { demo: true });
     const login = await fetch(base + '/auth/login', { method: 'POST', headers: { Origin: config.origins[0], 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'paciente@example.test', password: process.env.DEMO_PATIENT_PASSWORD }) });
     assert.equal(login.status, 201);
     const cookie = login.headers.get('set-cookie'); assert.match(cookie, /^__Host-sf_session=/); assert.match(cookie, /; Secure$/);
     const { csrf } = await login.json();
     const headers = { Origin: config.origins[0], Cookie: cookie.split(';')[0], 'X-CSRF-Token': csrf, 'Content-Type': 'application/json' };
-    const unit = (await (await fetch(base + '/catalog/units')).json())[0]; assert.match(unit.name, /Fictícia/);
+    const unit = (await (await fetch(base + '/catalog/units')).json())[0];
+    assert.equal(unit.name, 'Unidade Saúde Fácil'); assert.equal(unit.address, 'Cáceres, MT');
+    assert.equal(unit.services[0].name, 'Clínica geral');
     const slots = await (await fetch(base + '/catalog/slots?serviceId=' + unit.services[0].id, { headers })).json();
     const booked = await fetch(base + '/solicitacoes', { method: 'POST', headers, body: JSON.stringify({ slotId: slots.items[0].id, reason: '' }) });
     assert.equal(booked.status, 201); assert.equal((await booked.json()).status, 'CONFIRMED');

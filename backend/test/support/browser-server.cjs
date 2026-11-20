@@ -8,7 +8,7 @@ const { once } = require('node:events');
 const url = new URL(process.env.TEST_DATABASE_URL || '');
 if (!url.pathname.endsWith('_test')) throw new Error('Use somente um banco exclusivo com nome terminado em _test.');
 const schema = 'browser_' + randomUUID().replaceAll('-', ''); url.searchParams.set('schema', schema);
-Object.assign(process.env, { DATABASE_URL: url.toString(), APP_ENV: 'test', NODE_ENV: 'test', DATA_ENCRYPTION_KEY: randomBytes(32).toString('hex'), LOOKUP_HMAC_KEY: randomBytes(32).toString('hex'), PORT: '3101', FRONTEND_ORIGINS: 'http://127.0.0.1:3101', NOTIFICATION_MODE: 'disabled' });
+Object.assign(process.env, { DATABASE_URL: url.toString(), APP_ENV: 'test', NODE_ENV: 'test', DEMO_MODE: 'true', DATA_ENCRYPTION_KEY: randomBytes(32).toString('hex'), LOOKUP_HMAC_KEY: randomBytes(32).toString('hex'), PORT: '3101', FRONTEND_ORIGINS: 'http://127.0.0.1:3101', NOTIFICATION_MODE: 'disabled' });
 const prisma = new PrismaClient(), crypto = new CryptoService(new ConfigService());
 let app, closing = false;
 async function close() {

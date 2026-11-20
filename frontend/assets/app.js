@@ -21,14 +21,6 @@
     return body;
   }
   const ready = request('/auth/me').then(result => { user = result.user; csrf = result.csrf; }).catch(error => { sessionUnavailable = error.status !== 401; });
-  request('/operations/public-config').then(config => {
-    if (!config.demo) return;
-    const notice = make('aside', null, 'container notice');
-    notice.setAttribute('aria-label', 'Ambiente de demonstração');
-    notice.append(make('strong', 'Demonstração acadêmica'), make('p', 'Utilize apenas dados inventados. Os horários desta versão são fictícios e não reservam atendimento em uma UBS.'));
-    const main = document.querySelector('main');
-    if (main) main.before(notice);
-  }).catch(() => {});
   async function requireAuth(roles) {
     await ready;
     if (sessionUnavailable) { connectionNotice(); return null; }

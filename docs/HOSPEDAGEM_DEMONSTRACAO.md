@@ -1,6 +1,6 @@
 # Hospedagem da demonstração acadêmica
 
-Preparação em 20/11/2026. O arquivo `render.yaml` provisiona uma demonstração separada: aplicação Docker e PostgreSQL 16, ambos no plano gratuito explícito. Não provisiona uma operação institucional. Os dados são fictícios, as notificações ficam desativadas e todas as páginas exibem o aviso de demonstração.
+Preparação em 20/11/2026. O arquivo `render.yaml` provisiona uma demonstração separada: aplicação Docker e PostgreSQL 16, ambos no plano gratuito explícito. Não provisiona uma operação institucional. Os dados são fictícios e as notificações ficam desativadas. A interface usa a apresentação padrão do portal, sem aviso acadêmico recorrente; a identificação do ambiente fica na configuração e nesta documentação.
 
 Estado atualizado em 20/11/2026: demonstração publicada em https://saude-facil-demo-hhyy.onrender.com. A implantação inicial `dep-dc08st6tlv9c739gpi10`, do commit `fb1716a2e91a3fa29d0b24c9da2b00c66a74960f`, atingiu o estado `live` às 14h17 (America/Cuiaba). A aplicação `saude-facil-demo-hhyy` e o PostgreSQL 16 `saude-facil-demo-db-hhyy` usam planos Free, no workspace My Workspace autorizado pelo responsável. O banco tem acesso público direto bloqueado e expira em 20/12/2026, às 14h15 (America/Cuiaba).
 
@@ -82,3 +82,11 @@ O túnel atual pode ser interrompido com `docker stop saude-facil-demo-tunnel`. 
 - [Variáveis fornecidas pelo Render](https://render.com/docs/environment-variables).
 - [Limites dos serviços gratuitos](https://render.com/docs/free).
 - [Túneis temporários da Cloudflare](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
+
+## Apresentação da interface — 20/11/2026
+
+Removidos o aviso global de demonstração e os estilos antigos de ferramentas acadêmicas. A página inicial apresenta o fluxo de agendamento, e a orientação pública mostra a data de revisão somente quando há revisão válida. Avisos de emergência e limites da orientação de saúde permanecem.
+
+O seed passa a usar “Unidade Saúde Fácil”, “Clínica geral” e nomes sem o sufixo “Demonstração”. Em instalações já inicializadas, a próxima execução atualiza somente os rótulos originais conhecidos, preservando personalizações, identificadores, credenciais, sessões e reservas. O modo isolado, a origem sintética registrada na auditoria e as restrições de notificações permanecem. Essas alterações no código precisam ser implantadas para aparecer no endereço público; as verificações de publicação descritas acima se referem às versões anteriores.
+
+Validação local desta alteração: compilação e testes unitários aprovados; sete verificações de integração de hospedagem/seed aprovadas em banco descartável; quatro testes Playwright aprovados, incluindo cadastro, reserva, reagendamento, cancelamento, falha de rede, teclado, axe e reflow em 320/1280 px. A suíte de navegador foi executada com `DEMO_MODE=true` e conferiu a ausência dos rótulos acadêmicos nas páginas públicas e autenticadas. O banco descartável foi encerrado após os testes.

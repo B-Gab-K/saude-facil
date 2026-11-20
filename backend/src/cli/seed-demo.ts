@@ -8,11 +8,11 @@ const marker = 'academic-demo-v1';
 const unitId = 'd0000000-0000-4000-8000-000000000001';
 const serviceId = 'd0000000-0000-4000-8000-000000000002';
 export const demoAccounts = [
-  { role: Role.ADMIN, email: 'admin@example.test', nome: 'Administração Demonstração', passwordKey: 'DEMO_ADMIN_PASSWORD' },
-  { role: Role.PATIENT, email: 'paciente@example.test', nome: 'Paciente Demonstração', passwordKey: 'DEMO_PATIENT_PASSWORD' },
-  { role: Role.RECEPTION, email: 'recepcao@example.test', nome: 'Recepção Demonstração', passwordKey: 'DEMO_STAFF_PASSWORD' },
-  { role: Role.NURSE, email: 'enfermagem@example.test', nome: 'Enfermagem Demonstração', passwordKey: 'DEMO_STAFF_PASSWORD' },
-  { role: Role.COORDINATOR, email: 'coordenacao@example.test', nome: 'Coordenação Demonstração', passwordKey: 'DEMO_STAFF_PASSWORD' },
+  { role: Role.ADMIN, email: 'admin@example.test', nome: 'Administração', previousName: 'Administração Demonstração', passwordKey: 'DEMO_ADMIN_PASSWORD' },
+  { role: Role.PATIENT, email: 'paciente@example.test', nome: 'Mariana Oliveira', previousName: 'Paciente Demonstração', passwordKey: 'DEMO_PATIENT_PASSWORD' },
+  { role: Role.RECEPTION, email: 'recepcao@example.test', nome: 'Recepção', previousName: 'Recepção Demonstração', passwordKey: 'DEMO_STAFF_PASSWORD' },
+  { role: Role.NURSE, email: 'enfermagem@example.test', nome: 'Enfermagem', previousName: 'Enfermagem Demonstração', passwordKey: 'DEMO_STAFF_PASSWORD' },
+  { role: Role.COORDINATOR, email: 'coordenacao@example.test', nome: 'Coordenação', previousName: 'Coordenação Demonstração', passwordKey: 'DEMO_STAFF_PASSWORD' },
 ];
 
 export function validateDemoTarget(config: ConfigService) {
@@ -37,8 +37,8 @@ export async function seedDemo(prisma: PrismaClient, config: ConfigService, now 
     if (resetId && !initialized) throw new Error('Redefinição exige uma demonstração já inicializada.');
     if (!initialized) {
       if (await tx.user.count() || await tx.healthUnit.count() || await tx.appointment.count()) throw new Error('O seed não modifica um banco já ocupado por outra instalação.');
-      await tx.healthUnit.create({ data: { id: unitId, name: 'Unidade Fictícia — Demonstração', address: 'Endereço fictício, Cáceres MT', sourceUrl: 'https://example.invalid/demonstracao', active: true, verifiedAt: now, verifiedBy: marker, responseMinutes: 60 } });
-      await tx.careService.create({ data: { id: serviceId, unitId, name: 'Atendimento fictício', evidence: 'Dado sintético para avaliação acadêmica; sem validação institucional.', active: true, verifiedAt: now, verifiedBy: marker } });
+      await tx.healthUnit.create({ data: { id: unitId, name: 'Unidade Saúde Fácil', address: 'Cáceres, MT', sourceUrl: 'https://example.invalid/demonstracao', active: true, verifiedAt: now, verifiedBy: marker, responseMinutes: 60 } });
+      await tx.careService.create({ data: { id: serviceId, unitId, name: 'Clínica geral', evidence: 'Dado sintético para avaliação acadêmica; sem validação institucional.', active: true, verifiedAt: now, verifiedBy: marker } });
       for (const account of demoAccounts) {
         const id = randomUUID(), patient = account.role === Role.PATIENT;
         await tx.user.create({ data: { id, role: account.role, unitId: account.role === Role.ADMIN ? null : unitId,
@@ -51,6 +51,22 @@ export async function seedDemo(prisma: PrismaClient, config: ConfigService, now 
     } else {
       // Refuse to continue with replacement keys that cannot read the existing data.
       crypto.decrypt(initialized.detailCipher, 'audit');
+      // Update only original display labels; preserve customized records and their links.
+      const unitName = await tx.healthUnit.updateMany({ where: { id: unitId, name: 'Unidade Fictícia — Demonstração' }, data: { name: 'Unidade Saúde Fácil' } });
+      const unitAddress = await tx.healthUnit.updateMany({ where: { id: unitId, address: 'Endereço fictício, Cáceres MT' }, data: { address: 'Cáceres, MT' } });
+      const serviceName = await tx.careService.updateMany({ where: { id: serviceId, unitId, name: 'Atendimento fictício' }, data: { name: 'Clínica geral' } });
+      let renamedAccounts = 0;
+      for (const account of demoAccounts) {
+        const user = await tx.user.findUnique({ where: { emailHash: crypto.lookup(account.email, 'email') } });
+        if (!user || user.role !== account.role) continue;
+        const profile = crypto.decrypt<{ nome: string; email: string }>(user.profileCipher, `user:${user.id}`);
+        if (profile.nome !== account.previousName || profile.email !== account.email) continue;
+        await tx.user.update({ where: { id: user.id }, data: { profileCipher: crypto.encrypt({ ...profile, nome: account.nome }, `user:${user.id}`), searchTokens: crypto.nameTokens(account.nome) } });
+        renamedAccounts++;
+      }
+      if (unitName.count || unitAddress.count || serviceName.count || renamedAccounts) {
+        await tx.auditEvent.create({ data: { action: 'DEMO_PRESENTATION_UPDATED', targetId: marker, detailCipher: crypto.encrypt({ unitName: unitName.count, unitAddress: unitAddress.count, serviceName: serviceName.count, renamedAccounts }, 'audit') } });
+      }
     }
     let passwordsReset = false;
     if (resetId && !await tx.auditEvent.findFirst({ where: { action: 'DEMO_PASSWORDS_RESET', targetId: resetId } })) {

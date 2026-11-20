@@ -43,7 +43,7 @@
       $('ubs').value = previous.unitId; selectUnit(); $('servico').value = previous.serviceId;
       $('ubs').disabled = true; $('servico').disabled = true; $('sintomas').closest('.field').hidden = true; $('ditar').parentElement.hidden = true; $('confirmar').textContent = 'Confirmar reagendamento'; document.querySelector('h1').textContent = 'Escolher novo horário'; await loadSlots();
     }
-    if (!units.length) $('disponibilidade').textContent = 'A instituição ainda não publicou unidades e serviços validados.';
+    if (!units.length) $('disponibilidade').textContent = 'Nenhuma unidade disponível para agendamento no momento. Tente novamente mais tarde.';
   } catch (error) { sf.error($('erro'), error); }
   $('ubs').addEventListener('change', selectUnit);
   $('servico').addEventListener('change', () => { page = 1; loadSlots().catch(error => sf.error($('erro'), error)); });

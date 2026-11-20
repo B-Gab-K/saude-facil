@@ -28,6 +28,7 @@ test('teclado, semântica, contraste e reflow nas telas públicas e áreas auten
   const audit = async path => {
     for (const width of [320, 1280]) {
       await page.setViewportSize({ width, height: 900 }); await page.goto(path); await page.waitForLoadState('networkidle');
+      await expect(page.locator('body')).not.toContainText(/demonstração|fictíci|dados inventados|revisão institucional.*pendente/i);
       const result = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
       expect(result.violations.map(v => ({ id: v.id, nodes: v.nodes.map(n => n.target) })), path + ' ' + width).toEqual([]);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), path + ' reflow').toBe(true);
