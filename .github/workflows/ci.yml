@@ -18,7 +18,7 @@ jobs:
           POSTGRES_PASSWORD: local_test_only
           POSTGRES_DB: saude_facil_test
         ports: ['5432:5432']
-        options: --health-cmd 'pg_isready -U saude_test -d saude_facil_test' --health-interval 5s --health-timeout 3s --health-retries 20
+        options: --health-cmd "pg_isready -U saude_test -d saude_facil_test" --health-interval 5s --health-timeout 3s --health-retries 20
     env:
       TEST_DATABASE_URL: postgresql://saude_test:local_test_only@127.0.0.1:5432/saude_facil_test
     steps:
